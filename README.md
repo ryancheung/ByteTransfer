@@ -6,5 +6,5 @@ which means it can be used along with game servers written by other language (e.
 
 ## Why
 
-When you want to write your mmo game server with byte protocal for networking, e.g. [TrinityCore](https://github.com/TrinityCore/TrinityCore)
+When you want to write your mmo game server with byte protocal for networking, e.g. [TrinityCore](https://github.com/TrinityCore/TrinityCore).
 And you have a game client written with C# based game engine, e.g. Unity/MonoGame.

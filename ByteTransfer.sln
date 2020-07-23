@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteTransfer", "ByteTransfer\ByteTransfer.csproj", "{EF6DB911-00C6-4405-8268-52AC233ACDEA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ByteTransfer.UnitTests", "ByteTransfer.UnitTests\ByteTransfer.UnitTests.csproj", "{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,17 @@ Global
 		{EF6DB911-00C6-4405-8268-52AC233ACDEA}.Release|x64.Build.0 = Release|Any CPU
 		{EF6DB911-00C6-4405-8268-52AC233ACDEA}.Release|x86.ActiveCfg = Release|Any CPU
 		{EF6DB911-00C6-4405-8268-52AC233ACDEA}.Release|x86.Build.0 = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|x64.Build.0 = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Debug|x86.Build.0 = Debug|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|x64.ActiveCfg = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|x64.Build.0 = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|x86.ActiveCfg = Release|Any CPU
+		{FA107F2B-7A52-4E95-A4DA-963EE8D1FDE3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

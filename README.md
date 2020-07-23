@@ -2,7 +2,7 @@
 
 ByteTransfer is a multi-threaded TCP client for game development.
 It gives low level controls on game networking. It transfers/receives data with raw bytes instead of C# objects,
-which means it can be used along with game servers written by other language (e.g. c/cpp) other than C#.
+which means it can be used along with game servers written by other language (e.g. c/cpp) or C#.
 
 ## Why
 

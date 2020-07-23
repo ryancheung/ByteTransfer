@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 
 namespace ByteTransfer
 {
@@ -10,9 +11,6 @@ namespace ByteTransfer
         private int _rpos;
 
         private byte[] _storage;
-
-        public int Wpos { get { return _wpos; } }
-        public int Rpos { get { return _rpos; } }
 
         public MessageBuffer(int initialSize)
         {
@@ -27,6 +25,14 @@ namespace ByteTransfer
             _rpos = right._rpos;
 
             Array.Copy(right._storage, _storage, right._storage.Length);
+        }
+
+        public int Wpos() { return _wpos; }
+        public int Rpos() { return _rpos; }
+
+        public ReadOnlyCollection<byte> Data()
+        {
+            return Array.AsReadOnly(_storage);
         }
 
         public void Reset()
@@ -71,11 +77,11 @@ namespace ByteTransfer
                 Array.Resize(ref _storage, _storage.Length * 3 / 2);
         }
 
-        public void Write(byte[] data, int size)
+        public void Write(byte[] data, int size, int startIndex = 0)
         {
             if (size > 0)
             {
-                Array.Copy(data, 0, _storage, _wpos, size);
+                Array.Copy(data, startIndex, _storage, _wpos, size);
                 WriteCompleted(size);
             }
         }

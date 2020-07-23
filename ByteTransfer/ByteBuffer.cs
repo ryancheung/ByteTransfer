@@ -138,7 +138,7 @@ namespace ByteTransfer
             return _wpos;
         }
 
-        public void Rfinish()
+        public void FinishRead()
         {
             _rpos = _wpos;
         }
@@ -220,9 +220,9 @@ namespace ByteTransfer
             _wpos = newSize;
         }
 
-        public void Append(string src)
+        public void Append(string value)
         {
-            Append(Encoding.UTF8.GetBytes(src));
+            Append(Encoding.UTF8.GetBytes(value));
             Append((byte)0);
         }
 
@@ -234,54 +234,59 @@ namespace ByteTransfer
             Append(src);
         }
 
-        public void Append(byte src)
+        public void Append(bool value)
         {
-            AppendWithEndianess(new byte[] { src });
+            Append(new byte[] { value ? (byte)1 : (byte)0 });
         }
 
-        public void Append(ushort src)
+        public void Append(byte value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            Append(new byte[] { value });
         }
 
-        public void Append(uint src)
+        public void Append(ushort value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(ulong src)
+        public void Append(uint value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(sbyte src)
+        public void Append(ulong value)
         {
-            AppendWithEndianess(new byte[] { (byte)src });
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(short src)
+        public void Append(sbyte value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            Append(new byte[] { (byte)value });
         }
 
-        public void Append(int src)
+        public void Append(short value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(long src)
+        public void Append(int value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(float src)
+        public void Append(long value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Append(double src)
+        public void Append(float value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(src));
+            AppendWithEndianess(BitConverter.GetBytes(value));
+        }
+
+        public void Append(double value)
+        {
+            AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, byte[] src)
@@ -300,54 +305,64 @@ namespace ByteTransfer
             Put(pos, src);
         }
 
-        public void Put(int pos, byte src)
+        public void Put(int pos, byte value)
         {
-            PutWithEndianess(pos, new byte[] { src });
+            PutWithEndianess(pos, new byte[] { value });
         }
 
-        public void Put(int pos, ushort src)
+        public void Put(int pos, bool value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, new byte[] { value ? (byte)1 : (byte)0 });
         }
 
-        public void Put(int pos, uint src)
+        public void Put(int pos, ushort value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, ulong src)
+        public void Put(int pos, uint value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, sbyte src)
+        public void Put(int pos, ulong value)
         {
-            PutWithEndianess(pos, new byte[] { (byte)src });
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, short src)
+        public void Put(int pos, sbyte value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, new byte[] { (byte)value });
         }
 
-        public void Put(int pos, int src)
+        public void Put(int pos, short value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, long src)
+        public void Put(int pos, int value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, float src)
+        public void Put(int pos, long value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, double src)
+        public void Put(int pos, float value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(src));
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
+        }
+
+        public void Put(int pos, double value)
+        {
+            PutWithEndianess(pos, BitConverter.GetBytes(value));
+        }
+
+        public bool ReadBool()
+        {
+            return _storage[_rpos++] > 0 ? true : false;
         }
 
         public byte ReadByte()
@@ -483,8 +498,8 @@ namespace ByteTransfer
 
         public void Read(byte[] dest, int len, int destIndex = 0)
         {
-            if (_rpos  + len > Size())
-               throw new ByteBufferPositionException(false, _rpos, len, Size());
+            if (_rpos + len > Size())
+                throw new ByteBufferPositionException(false, _rpos, len, Size());
 
             Array.Copy(_storage, _rpos, dest, destIndex, len);
 
@@ -515,24 +530,28 @@ namespace ByteTransfer
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("STORAGE_SIZE: ").Append(Size());
+            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
             for (uint i = 0; i < Size(); ++i)
             {
-                sb.Append(_storage[i]);
+                sb.Append(_storage[i]).Append(" - ");
             }
             sb.Append(" ");
+
+            Console.WriteLine(sb.ToString());
         }
 
         public void PrintTextLike()
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("STORAGE_SIZE: ").Append(Size());
+            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
             for (uint i = 0; i < Size(); ++i)
             {
                 sb.Append((char)_storage[i]);
             }
             sb.Append(" ");
+
+            Console.WriteLine(sb.ToString());
         }
 
         public void PrintHexlike()
@@ -541,7 +560,7 @@ namespace ByteTransfer
 
             StringBuilder sb = new StringBuilder();
 
-            sb.Append("STORAGE_SIZE: ").Append(Size());
+            sb.Append("STORAGE_SIZE ").Append(Size()).Append(" : ");
 
             for (uint i = 0; i < Size(); ++i)
             {
@@ -557,10 +576,12 @@ namespace ByteTransfer
                     ++j;
                 }
 
-                sb.Append(ReadByte().ToString("X2"));
+                sb.Append("0x").Append(ReadByte().ToString("X2")).Append(" ");
             }
 
             sb.Append(" ");
+
+            Console.WriteLine(sb.ToString());
         }
     }
 }

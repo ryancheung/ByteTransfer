@@ -50,7 +50,13 @@ namespace ByteTransfer
 
         public void WriteCompleted(int bytes) { _wpos += bytes; }
 
-        public int GetActiveSize() { return _wpos - _rpos; }
+        public int GetActiveSize()
+        {
+            if (_rpos > _wpos)
+                return 0;
+
+            return _wpos - _rpos;
+        }
 
         public int GetRemainingSpace() { return _storage.Length - _wpos; }
 
@@ -59,7 +65,7 @@ namespace ByteTransfer
         // Discards inactive data
         public void Normalize()
         {
-            if (_rpos > 0)
+            if (_rpos > 0 && _wpos > _rpos)
             {
                 if (_rpos != _wpos)
                     Array.ConstrainedCopy(_storage, _rpos, _storage, 0, GetActiveSize());

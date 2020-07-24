@@ -13,7 +13,7 @@ namespace ByteTransfer
         private string _remoteAddress;
         private int _remotePort;
         private MessageBuffer _readBuffer;
-        private Queue<MessageBuffer> _writeQueue;
+        private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
 
         private volatile bool _closed;
         private volatile bool _closing;

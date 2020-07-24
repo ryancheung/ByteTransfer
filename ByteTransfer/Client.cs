@@ -76,6 +76,7 @@ namespace ByteTransfer
             if (_started) return;
 
             _started = true;
+            _stopped = false;
 
             _tcpClient.BeginConnect(_host, _port, _requestCallback, null);
         }

@@ -30,9 +30,9 @@ namespace ByteTransfer
         public int Wpos() { return _wpos; }
         public int Rpos() { return _rpos; }
 
-        public ReadOnlyCollection<byte> Data()
+        public byte[] Data()
         {
-            return Array.AsReadOnly(_storage);
+            return _storage;
         }
 
         public void Reset()

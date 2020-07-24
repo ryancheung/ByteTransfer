@@ -19,7 +19,7 @@ namespace ByteTransfer.UnitTests
             var newSize = 1024;
             _buffer.Resize(newSize);
 
-            Assert.AreEqual(newSize, _buffer.Data().Count);
+            Assert.AreEqual(newSize, _buffer.Data().Length);
         }
 
         [TestMethod]

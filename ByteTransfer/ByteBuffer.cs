@@ -143,9 +143,9 @@ namespace ByteTransfer
             _rpos = _wpos;
         }
 
-        public ReadOnlyCollection<byte> Data()
+        public byte[] Data()
         {
-            return Array.AsReadOnly(_storage);
+            return _storage;
         }
 
         public void Clear()

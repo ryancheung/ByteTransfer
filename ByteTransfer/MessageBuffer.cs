@@ -5,7 +5,7 @@ namespace ByteTransfer
 {
     public class MessageBuffer
     {
-        public const int DefaultSize = 4096;
+        public const int DefaultSize = 0x20;
 
         private int _wpos;
         private int _rpos;

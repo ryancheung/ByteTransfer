@@ -64,7 +64,7 @@ namespace ByteTransfer
 
     public class ByteBuffer
     {
-        public const int DEFAULT_SIZE = 0x1000;
+        public const int DEFAULT_SIZE = 0x20;
 
         private static readonly ThreadLocal<byte[]> _ReadBuffer2Bytes;
         private static readonly ThreadLocal<byte[]> _ReadBuffer4Bytes;

@@ -1,55 +1,76 @@
 using System;
-using System.Threading;
 using System.Net.Sockets;
 
 namespace ByteTransfer
 {
-    public class Client<T> : TcpClient where T : BaseSocket, new()
+    public class Client<T> where T : BaseSocket, new()
     {
-        private Thread _workerThread;
-
         private string _host;
         private int _port;
+
+        private TcpClient _tcpClient;
+        public TcpClient TcpClient { get { return _tcpClient; } }
+
         private AsyncCallback _requestCallback;
 
         private T _socket;
         public T Socket { get { return _socket; } }
 
+        public bool Started { get; private set; }
+        public bool Stopped { get; private set; }
+
         public Client(string host, int port)
         {
+            _tcpClient = new TcpClient();
+
             _host = host;
             _port = port;
             _requestCallback = Connecting;
 
-            _workerThread = new Thread(new ThreadStart(Run)) { IsBackground = true, Name = "NetworkThread" };
-            _workerThread.Start();
-        }
-
-        public void Restart()
-        {
-            if (Connected)
-                this.Close();
-
-            _workerThread = new Thread(new ThreadStart(Run)) { IsBackground = true };
-            _workerThread.Start();
+            Start();
         }
 
         private void Connecting(IAsyncResult result)
         {
-            if (Connected)
+            if (Stopped)
             {
-                EndConnect(result);
+                _tcpClient.Close();
+                return;
+            }
+
+            if (_tcpClient.Connected)
+            {
+                _tcpClient.EndConnect(result);
 
                 _socket = new T();
-                _socket.Create(Client);
+                _socket.Create(_tcpClient.Client);
 
                 _socket.Start();
             }
+            else
+                Stop();
         }
 
-        private void Run()
+        public void Start()
         {
-            BeginConnect(_host, _port, _requestCallback, null);
+            if (Started) return;
+
+            Started = true;
+
+            _tcpClient.BeginConnect(_host, _port, _requestCallback, null);
+        }
+
+        public void Stop()
+        {
+            if (Stopped) return;
+
+            Stopped = true;
+            Started = false;
+
+            if (_socket != null)
+                _socket.DelayedCloseSocket();
+
+            _socket = null;
         }
     }
 }

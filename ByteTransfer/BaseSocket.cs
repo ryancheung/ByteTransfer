@@ -29,17 +29,20 @@ namespace ByteTransfer
         public string RemoteAddress { get { return _remoteAddress; } }
         public int RemotePort { get { return _remotePort; } }
 
-        public BaseSocket(Socket socket)
+        public BaseSocket()
+        {
+            _readBuffer = new MessageBuffer(READ_BLOCK_SIZE);
+
+            ReceiveDataCallback = ReadHandlerInternal;
+            SendDataCallback = WriteHandlerInternal;
+        }
+
+        public void Create(Socket socket)
         {
             _socket = socket;
 
             _remoteAddress = (socket.RemoteEndPoint as IPEndPoint).Address.ToString();
             _remotePort = (socket.RemoteEndPoint as IPEndPoint).Port;
-
-            _readBuffer = new MessageBuffer(READ_BLOCK_SIZE);
-
-            ReceiveDataCallback = ReadHandlerInternal;
-            SendDataCallback = WriteHandlerInternal;
         }
 
         public void Dispose()

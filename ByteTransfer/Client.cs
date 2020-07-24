@@ -40,7 +40,9 @@ namespace ByteTransfer
             {
                 EndConnect(result);
 
-                _socket = (T)Activator.CreateInstance(typeof(T), Client);
+                _socket = new T();
+                _socket.Create(Client);
+
                 _socket.Start();
             }
         }

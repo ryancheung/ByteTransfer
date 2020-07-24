@@ -96,6 +96,11 @@ namespace ByteTransfer
             _socket.NoDelay = enable;
         }
 
+        protected void SetBlocking(bool enable)
+        {
+            _socket.Blocking = enable;
+        }
+
         protected virtual void OnClose() { }
 
         protected virtual void ReadHandler() { }

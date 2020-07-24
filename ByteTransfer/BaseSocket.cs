@@ -10,7 +10,7 @@ namespace ByteTransfer
         public const int READ_BLOCK_SIZE = 4096;
 
         private Socket _socket;
-        private string _remoteAddress;
+        private IPAddress _remoteAddress;
         private int _remotePort;
         private MessageBuffer _readBuffer;
         private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
@@ -26,7 +26,7 @@ namespace ByteTransfer
         private readonly AsyncCallback SendDataCallback;
         private SocketError _error;
 
-        public string RemoteAddress { get { return _remoteAddress; } }
+        public IPAddress RemoteAddress { get { return _remoteAddress; } }
         public int RemotePort { get { return _remotePort; } }
 
         public BaseSocket()
@@ -41,7 +41,7 @@ namespace ByteTransfer
         {
             _socket = socket;
 
-            _remoteAddress = (socket.RemoteEndPoint as IPEndPoint).Address.ToString();
+            _remoteAddress = (socket.RemoteEndPoint as IPEndPoint).Address;
             _remotePort = (socket.RemoteEndPoint as IPEndPoint).Port;
         }
 

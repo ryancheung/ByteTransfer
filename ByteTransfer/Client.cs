@@ -21,7 +21,7 @@ namespace ByteTransfer
             _port = port;
             _requestCallback = Connecting;
 
-            _workerThread = new Thread(new ThreadStart(Run)) { IsBackground = true };
+            _workerThread = new Thread(new ThreadStart(Run)) { IsBackground = true, Name = "NetworkThread" };
             _workerThread.Start();
         }
 

@@ -18,8 +18,8 @@ namespace ByteTransfer
         private MessageBuffer _readBuffer;
         private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
 
-        private volatile bool _closed;
-        private volatile bool _closing;
+        private InterlockedBoolean _closed;
+        private bool _closing;
 
         private bool _isWritingAsync;
 
@@ -60,7 +60,7 @@ namespace ByteTransfer
 
             if (disposing)
             {
-                _closed = true;
+                _closed.Value = true;
                 _socket.Close();
             }
 
@@ -69,7 +69,7 @@ namespace ByteTransfer
 
         public virtual bool Update()
         {
-            if (_closed)
+            if (_closed.Value)
                 return false;
 
             return true;
@@ -77,14 +77,15 @@ namespace ByteTransfer
 
         public bool IsOpen()
         {
-            return !_closed && !_closing;
+            return !_closed.Value && !_closing;
         }
 
         public virtual void Start() { }
 
         public void CloseSocket()
         {
-            if (_closed) return;
+            if (_closed.Exchange(true))
+                return;
 
             _socket.Shutdown(SocketShutdown.Send);
 

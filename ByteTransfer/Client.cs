@@ -41,12 +41,11 @@ namespace ByteTransfer
         {
             if (_stopped) return;
 
-            if (_socket == null) return;
+            if (_socket == null || _socket.Disposed) return;
 
             if (!_socket.Update())
             {
-                if (_socket.IsOpen())
-                    _socket.CloseSocket();
+                Stop();
             }
         }
 
@@ -88,9 +87,8 @@ namespace ByteTransfer
             _stopped = true;
             _started = false;
 
-            if (_socket != null)
-                _socket.DelayedCloseSocket();
-
+            if (!_socket.Disposed)
+                _socket.Dispose();
             _socket = null;
         }
     }

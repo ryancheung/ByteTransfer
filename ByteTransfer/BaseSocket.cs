@@ -112,16 +112,27 @@ namespace ByteTransfer
 
         private void ReadHandlerInternal(IAsyncResult result)
         {
-            if (_error > 0)
+            switch (_error)
             {
-                CloseSocket();
-                return;
+                case SocketError.Success:
+                case SocketError.IOPending:
+                    break;
+                default:
+                    CloseSocket();
+                    return;
             }
 
-            var transferredBytes = _socket.EndReceive(result);
+            try
+            {
+                var transferredBytes = _socket.EndReceive(result);
 
-            _readBuffer.WriteCompleted(transferredBytes);
-            ReadHandler();
+                _readBuffer.WriteCompleted(transferredBytes);
+                ReadHandler();
+            }
+            catch (Exception)
+            {
+                CloseSocket();
+            }
         }
 
         public void AsyncRead()
@@ -151,18 +162,25 @@ namespace ByteTransfer
                 return;
             }
 
-            var transferedBytes = _socket.EndSend(result);
+            try
+            {
+                var transferedBytes = _socket.EndSend(result);
 
-            _isWritingAsync = false;
-            _writeQueue.Peek().ReadCompleted(transferedBytes);
+                _isWritingAsync = false;
+                _writeQueue.Peek().ReadCompleted(transferedBytes);
 
-            if (_writeQueue.Peek().GetActiveSize() <= 0)
-                _writeQueue.Dequeue();
+                if (_writeQueue.Peek().GetActiveSize() <= 0)
+                    _writeQueue.Dequeue();
 
-            if (_writeQueue.Count > 0)
-                AsyncProcessQueue();
-            else if (_closing)
+                if (_writeQueue.Count > 0)
+                    AsyncProcessQueue();
+                else if (_closing)
+                    CloseSocket();
+            }
+            catch (Exception)
+            {
                 CloseSocket();
+            }
         }
 
         protected void AsyncProcessQueue()
@@ -181,7 +199,7 @@ namespace ByteTransfer
             }
             catch (Exception)
             {
-                _closing = true;
+                CloseSocket();
             }
         }
 

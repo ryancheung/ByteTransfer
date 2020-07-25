@@ -98,7 +98,7 @@ namespace ByteTransfer
             _wpos = right._wpos;
             _rpos = right._rpos;
 
-            Array.Copy(right._storage, _storage, right._storage.Length);
+            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
         }
 
         public int Size()
@@ -216,7 +216,7 @@ namespace ByteTransfer
             if (_storage.Length < newSize)
                 Array.Resize(ref _storage, newSize);
 
-            Array.Copy(src, 0, _storage, _wpos, src.Length);
+            Buffer.BlockCopy(src, 0, _storage, _wpos, src.Length);
 
             _wpos = newSize;
         }
@@ -295,7 +295,7 @@ namespace ByteTransfer
             Debug.Assert(pos + src.Length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size()));
             Debug.Assert(src != null, string.Format("Attempted to put a NULL-pointer in ByteBuffer (pos: {0} size: {1})", pos, Size()));
 
-            Array.Copy(src, 0, _storage, pos, src.Length);
+            Buffer.BlockCopy(src, 0, _storage, pos, src.Length);
         }
 
         private void PutWithEndianess(int pos, byte[] src)
@@ -373,7 +373,7 @@ namespace ByteTransfer
 
         public ushort ReadUShort()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer2Bytes);
@@ -384,7 +384,7 @@ namespace ByteTransfer
 
         public uint ReadUInt()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer4Bytes);
@@ -395,7 +395,7 @@ namespace ByteTransfer
 
         public ulong ReadULong()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer8Bytes);
@@ -411,7 +411,7 @@ namespace ByteTransfer
 
         public short ReadShort()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer2Bytes);
@@ -422,7 +422,7 @@ namespace ByteTransfer
 
         public int ReadInt()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer4Bytes);
@@ -433,7 +433,7 @@ namespace ByteTransfer
 
         public long ReadLong()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer8Bytes);
@@ -444,7 +444,7 @@ namespace ByteTransfer
 
         public float ReadFloat()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer4Bytes);
@@ -461,7 +461,7 @@ namespace ByteTransfer
 
         public double ReadDouble()
         {
-            Array.Copy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
 
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(ReadBuffer8Bytes);
@@ -502,7 +502,7 @@ namespace ByteTransfer
             if (_rpos + len > Size())
                 throw new ByteBufferPositionException(false, _rpos, len, Size());
 
-            Array.Copy(_storage, _rpos, dest, destIndex, len);
+            Buffer.BlockCopy(_storage, _rpos, dest, destIndex, len);
 
             _rpos += len;
         }

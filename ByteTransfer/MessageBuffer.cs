@@ -23,7 +23,7 @@ namespace ByteTransfer
             _wpos = right._wpos;
             _rpos = right._rpos;
 
-            Array.Copy(right._storage, _storage, right._storage.Length);
+            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
         }
 
         public int Wpos() { return _wpos; }
@@ -73,7 +73,7 @@ namespace ByteTransfer
             if (_rpos > 0 && _wpos > _rpos)
             {
                 if (_rpos != _wpos)
-                    Array.ConstrainedCopy(_storage, _rpos, _storage, 0, GetActiveSize());
+                    Buffer.BlockCopy(_storage, _rpos, _storage, 0, GetActiveSize());
 
                 _wpos -= _rpos;
                 _rpos = 0;
@@ -92,7 +92,7 @@ namespace ByteTransfer
         {
             if (size > 0)
             {
-                Array.Copy(data, startIndex, _storage, _wpos, size);
+                Buffer.BlockCopy(data, startIndex, _storage, _wpos, size);
                 WriteCompleted(size);
             }
         }

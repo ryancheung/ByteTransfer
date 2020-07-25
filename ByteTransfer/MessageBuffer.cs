@@ -46,7 +46,13 @@ namespace ByteTransfer
             Array.Resize(ref _storage, bytes);
         }
 
-        public void ReadCompleted(int bytes) { _rpos += bytes; }
+        public void ReadCompleted(int bytes)
+        {
+            _rpos += bytes;
+
+            if (_wpos == 0)
+                _rpos = 0;
+        }
 
         public void WriteCompleted(int bytes) { _wpos += bytes; }
 

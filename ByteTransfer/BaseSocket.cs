@@ -12,6 +12,9 @@ namespace ByteTransfer
         private Socket _socket;
         private IPAddress _remoteAddress;
         private int _remotePort;
+
+        public Socket Socket { get { return _socket; } }
+
         private MessageBuffer _readBuffer;
         private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
 
@@ -21,6 +24,7 @@ namespace ByteTransfer
         private bool _isWritingAsync;
 
         private bool _disposed = false;
+        public bool Disposed { get { return _disposed; } }
 
         private readonly AsyncCallback ReceiveDataCallback;
         private readonly AsyncCallback SendDataCallback;
@@ -127,8 +131,15 @@ namespace ByteTransfer
             _readBuffer.Normalize();
             _readBuffer.EnsureFreeSpace();
 
-            _socket.BeginReceive(_readBuffer.Data(), _readBuffer.Wpos(), _readBuffer.GetRemainingSpace(),
-                SocketFlags.None, out _error, ReceiveDataCallback, null);
+            try
+            {
+                _socket.BeginReceive(_readBuffer.Data(), _readBuffer.Wpos(), _readBuffer.GetRemainingSpace(),
+                    SocketFlags.None, out _error, ReceiveDataCallback, null);
+            }
+            catch (Exception)
+            {
+                _closing = true;
+            }
         }
 
         private void WriteHandlerInternal(IAsyncResult result)
@@ -162,8 +173,15 @@ namespace ByteTransfer
 
             var buffer = _writeQueue.Peek();
 
-            _socket.BeginSend(buffer.Data(), buffer.Rpos(), buffer.GetActiveSize(),
-                SocketFlags.None, out _error, SendDataCallback, null);
+            try
+            {
+                _socket.BeginSend(buffer.Data(), buffer.Rpos(), buffer.GetActiveSize(),
+                    SocketFlags.None, out _error, SendDataCallback, null);
+            }
+            catch (Exception)
+            {
+                _closing = true;
+            }
         }
 
         public void QueuePacket(MessageBuffer buffer)

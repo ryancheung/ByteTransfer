@@ -26,8 +26,6 @@ namespace ByteTransfer
 
         public Client(string host, int port)
         {
-            _tcpClient = new TcpClient();
-
             _host = host;
             _port = port;
             _requestCallback = Connecting;
@@ -43,7 +41,7 @@ namespace ByteTransfer
 
             if (_socket == null || _socket.Disposed) return;
 
-            if (!_socket.Update())
+            if (!_socket.Update() || !_tcpClient.Connected || !_socket.Socket.Connected)
             {
                 Stop();
             }
@@ -73,6 +71,8 @@ namespace ByteTransfer
         public void Start()
         {
             if (_started) return;
+
+            _tcpClient = new TcpClient();
 
             _started = true;
             _stopped = false;

@@ -25,12 +25,22 @@ namespace ByteTransfer.UnitTests
         [TestMethod]
         public void ShouldReadCompleted()
         {
+            _buffer.WriteCompleted(10);
             var oldRpos = _buffer.Rpos();
 
             var bytes = 4;
             _buffer.ReadCompleted(bytes);
 
             Assert.AreEqual(_buffer.Rpos(), oldRpos + bytes);
+        }
+
+        [TestMethod]
+        public void ShouldReadCompletedIfWPosIs0()
+        {
+            var bytes = 4;
+            _buffer.ReadCompleted(bytes);
+
+            Assert.AreEqual(_buffer.Rpos(), 0);
         }
 
         [TestMethod]

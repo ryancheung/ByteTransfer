@@ -24,10 +24,14 @@ namespace ByteTransfer
 
         private Timer _updateTimer;
 
-        public Client(string host, int port)
+        private AddressFamily _addressFamily;
+
+        public Client(string host, int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
         {
             _host = host;
             _port = port;
+            _addressFamily = addressFamily;
+
             _requestCallback = Connecting;
 
             _updateTimer = new Timer(new TimerCallback(Update), null, 10, 10);
@@ -72,7 +76,7 @@ namespace ByteTransfer
         {
             if (_started) return;
 
-            _tcpClient = new TcpClient();
+            _tcpClient = new TcpClient(_addressFamily);
 
             _started = true;
             _stopped = false;

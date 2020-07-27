@@ -91,7 +91,7 @@ namespace ByteTransfer
             _stopped = true;
             _started = false;
 
-            if (!_socket.Disposed)
+            if (_socket != null && !_socket.Disposed)
                 _socket.Dispose();
             _socket = null;
         }

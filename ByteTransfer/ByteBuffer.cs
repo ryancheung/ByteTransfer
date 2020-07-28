@@ -290,12 +290,20 @@ namespace ByteTransfer
             AppendWithEndianess(BitConverter.GetBytes(value));
         }
 
-        public void Put(int pos, byte[] src)
+        public void Put(int pos, byte[] src, int startIndex, int length)
+        {
+            Debug.Assert(pos + length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", length, pos, Size()));
+            Debug.Assert(src != null, string.Format("Attempted to put a NULL-pointer in ByteBuffer (pos: {0} size: {1})", pos, Size()));
+
+            Buffer.BlockCopy(src, startIndex, _storage, pos, length);
+        }
+
+        public void Put(int pos, byte[] src, int startIndex = 0)
         {
             Debug.Assert(pos + src.Length <= Size(), string.Format("Attempted to put value with size: {0} in ByteBuffer (pos: {1} size: {2})", src.Length, pos, Size()));
             Debug.Assert(src != null, string.Format("Attempted to put a NULL-pointer in ByteBuffer (pos: {0} size: {1})", pos, Size()));
 
-            Buffer.BlockCopy(src, 0, _storage, pos, src.Length);
+            Buffer.BlockCopy(src, startIndex, _storage, pos, src.Length);
         }
 
         private void PutWithEndianess(int pos, byte[] src)
@@ -497,7 +505,21 @@ namespace ByteTransfer
                 return string.Empty;
         }
 
-        public void Read(byte[] dest, int len, int destIndex = 0)
+        public byte[] ReadBytes(int len)
+        {
+            if (_rpos + len > Size())
+                throw new ByteBufferPositionException(false, _rpos, len, Size());
+
+            byte[] bytes = new byte[len];
+
+            Buffer.BlockCopy(_storage, _rpos, bytes, 0, len);
+
+            _rpos += len;
+
+            return bytes;
+        }
+
+        public void ReadBytes(byte[] dest, int len, int destIndex = 0)
         {
             if (_rpos + len > Size())
                 throw new ByteBufferPositionException(false, _rpos, len, Size());

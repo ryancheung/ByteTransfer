@@ -34,6 +34,11 @@ namespace ByteTransfer
             return _storage;
         }
 
+        public byte GetByte(int pos)
+        {
+            return _storage[_rpos + pos];
+        }
+
         public void Reset()
         {
             _wpos = 0;

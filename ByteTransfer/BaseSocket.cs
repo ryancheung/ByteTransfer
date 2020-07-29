@@ -87,7 +87,8 @@ namespace ByteTransfer
             if (_closed.Exchange(true))
                 return;
 
-            _socket.Shutdown(SocketShutdown.Send);
+            if (_socket.Connected)
+                _socket.Shutdown(SocketShutdown.Send);
 
             OnClose();
         }

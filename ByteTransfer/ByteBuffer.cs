@@ -93,12 +93,22 @@ namespace ByteTransfer
         {
         }
 
-        public ByteBuffer(ByteBuffer right) : this(DEFAULT_SIZE)
+        public ByteBuffer(ByteBuffer right)
         {
             _wpos = right._wpos;
             _rpos = right._rpos;
+            _storage = right._storage;
 
-            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
+            right._storage = new byte[0];
+            right._wpos = 0;
+            right._rpos = 0;
+        }
+
+        public ByteBuffer(MessageBuffer buffer)
+        {
+            _rpos = 0;
+            _wpos = 0;
+            _storage = buffer.Move();
         }
 
         public int Size()

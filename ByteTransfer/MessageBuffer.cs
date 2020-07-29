@@ -20,10 +20,22 @@ namespace ByteTransfer
 
         public MessageBuffer(MessageBuffer right) : this(DefaultSize)
         {
+            if (this == right) return;
+
             _wpos = right._wpos;
             _rpos = right._rpos;
+            _storage = right.Move();
+        }
 
-            Buffer.BlockCopy(right._storage, 0, _storage, 0, right._storage.Length);
+        public byte[] Move()
+        {
+            _wpos = 0;
+            _rpos = 0;
+
+            var ret = _storage;
+            _storage = new byte[0];
+
+            return ret;
         }
 
         public int Wpos() { return _wpos; }

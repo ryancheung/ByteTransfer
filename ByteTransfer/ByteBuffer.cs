@@ -111,6 +111,15 @@ namespace ByteTransfer
             _storage = buffer.Move();
         }
 
+        public ByteBuffer(byte[] src, int startIndex, int length)
+        {
+            _rpos = 0;
+            _wpos = length;
+            _storage = new byte[length];
+
+            Buffer.BlockCopy(src, startIndex, _storage, 0, length);
+        }
+
         public int Size()
         {
             return _storage.Length;

@@ -26,6 +26,23 @@ namespace ByteTransfer
 
         private AddressFamily _addressFamily;
 
+        public bool IsConnected
+        {
+            get
+            {
+                if (_tcpClient == null) return false;
+
+                try
+                {
+                    return _tcpClient.Connected;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
         public Client(string host, int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
         {
             _host = host;
@@ -34,9 +51,23 @@ namespace ByteTransfer
 
             _requestCallback = Connecting;
 
-            _updateTimer = new Timer(new TimerCallback(Update), null, 10, 10);
+            _updateTimer = new Timer(new TimerCallback(Update), null, 100, 100);
 
             Start();
+        }
+
+        private bool IsSocketConnected()
+        {
+            if (_socket == null || _socket.Disposed) return false;
+
+            try
+            {
+                return !(_socket.Socket.Poll(1, SelectMode.SelectRead) && _socket.Socket.Available == 0);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private void Update(object state)
@@ -45,7 +76,7 @@ namespace ByteTransfer
 
             if (_socket == null || _socket.Disposed) return;
 
-            if (!_socket.Update() || !_tcpClient.Connected || !_socket.Socket.Connected)
+            if (!IsSocketConnected())
             {
                 Stop();
             }
@@ -56,6 +87,7 @@ namespace ByteTransfer
             if (_stopped)
             {
                 _tcpClient.Close();
+                _tcpClient = null;
                 return;
             }
 
@@ -94,6 +126,7 @@ namespace ByteTransfer
             if (_socket != null && !_socket.Disposed)
                 _socket.Dispose();
             _socket = null;
+            _tcpClient = null;
         }
     }
 }

@@ -11,6 +11,9 @@ namespace ByteTransfer
         private T _socket;
         public T Socket { get { return _socket; } }
 
+        private bool _connectFailed;
+        public bool ConnectFailed { get { return _connectFailed;  } }
+
         private readonly AddressFamily _addressFamily;
 
         public bool IsOpen()
@@ -32,6 +35,13 @@ namespace ByteTransfer
         private void ConnectCallback(IAsyncResult result)
         {
             Socket client = (Socket)result.AsyncState;
+
+            if (!client.Connected)
+            {
+                _connectFailed = true;
+                return;
+            }
+
             client.EndConnect(result);
 
             _socket = new T();

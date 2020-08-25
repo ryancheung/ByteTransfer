@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace ByteTransfer
 {
@@ -19,7 +20,8 @@ namespace ByteTransfer
         private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
 
         private InterlockedBoolean _closed;
-        private bool _closing;
+        private InterlockedBoolean _closing;
+        private Timer _closingTimer;
 
         private bool _isWritingAsync;
 
@@ -60,24 +62,27 @@ namespace ByteTransfer
 
             if (disposing)
             {
-                _closed.Value = true;
-                _socket.Close();
+                CloseSocket();
+                _socket.Dispose();
             }
 
             _disposed = true;
         }
 
-        public virtual bool Update()
+        private void SetClosing()
         {
-            if (_closed.Value)
-                return false;
+            if (_closing.Exchange(true))
+                return;
 
-            return true;
+            _closingTimer = new Timer((o) =>
+            {
+                CloseSocket();
+            }, null, 2000, Timeout.Infinite);
         }
 
         public bool IsOpen()
         {
-            return !_closed.Value && !_closing;
+            return !_closed.Value && !_closing.Value;
         }
 
         public virtual void Start() { }
@@ -92,8 +97,6 @@ namespace ByteTransfer
 
             OnClose();
         }
-
-        public void DelayedCloseSocket() { _closing = true; }
 
         public MessageBuffer GetReadBuffer() { return _readBuffer; }
 
@@ -151,7 +154,7 @@ namespace ByteTransfer
             }
             catch (Exception)
             {
-                _closing = true;
+                SetClosing();
             }
         }
 
@@ -175,7 +178,7 @@ namespace ByteTransfer
 
                 if (_writeQueue.Count > 0)
                     AsyncProcessQueue();
-                else if (_closing)
+                else if (_closing.Value)
                     CloseSocket();
             }
             catch (Exception)

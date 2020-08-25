@@ -1,46 +1,23 @@
 using System;
-using System.Threading;
 using System.Net.Sockets;
 
 namespace ByteTransfer
 {
     public class Client<T> where T : BaseSocket, new()
     {
-        private string _host;
-        private int _port;
-
-        private TcpClient _tcpClient;
-        public TcpClient TcpClient { get { return _tcpClient; } }
-
-        private AsyncCallback _requestCallback;
+        private readonly string _host;
+        private readonly int _port;
 
         private T _socket;
         public T Socket { get { return _socket; } }
 
-        private bool _started;
-        public bool Started { get { return _started; } }
-        private bool _stopped;
-        public bool Stopped { get { return _stopped; } }
+        private readonly AddressFamily _addressFamily;
 
-        private Timer _updateTimer;
-
-        private AddressFamily _addressFamily;
-
-        public bool IsConnected
+        public bool IsOpen()
         {
-            get
-            {
-                if (_tcpClient == null) return false;
+            if (_socket == null || _socket.Disposed) return false;
 
-                try
-                {
-                    return _tcpClient.Connected;
-                }
-                catch
-                {
-                    return false;
-                }
-            }
+            return _socket.IsOpen();
         }
 
         public Client(string host, int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
@@ -49,84 +26,26 @@ namespace ByteTransfer
             _port = port;
             _addressFamily = addressFamily;
 
-            _requestCallback = Connecting;
-
-            _updateTimer = new Timer(new TimerCallback(Update), null, 100, 100);
-
             Start();
         }
 
-        private bool IsSocketConnected()
+        private void ConnectCallback(IAsyncResult result)
         {
-            if (_socket == null || _socket.Disposed) return false;
+            Socket client = (Socket)result.AsyncState;
+            client.EndConnect(result);
 
-            try
-            {
-                return !(_socket.Socket.Poll(1, SelectMode.SelectRead) && _socket.Socket.Available == 0);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
+            _socket = new T();
+            _socket.Create(client);
 
-        private void Update(object state)
-        {
-            if (_stopped) return;
-
-            if (_socket == null || _socket.Disposed) return;
-
-            if (!IsSocketConnected())
-            {
-                Stop();
-            }
-        }
-
-        private void Connecting(IAsyncResult result)
-        {
-            if (_stopped)
-            {
-                _tcpClient.Close();
-                _tcpClient = null;
-                return;
-            }
-
-            if (_tcpClient.Connected)
-            {
-                _tcpClient.EndConnect(result);
-
-                _socket = new T();
-                _socket.Create(_tcpClient.Client);
-
-                _socket.Start();
-            }
-            else
-                Stop();
+            _socket.Start();
         }
 
         public void Start()
         {
-            if (_started) return;
+            if (_socket != null) return;
 
-            _tcpClient = new TcpClient(_addressFamily);
-
-            _started = true;
-            _stopped = false;
-
-            _tcpClient.BeginConnect(_host, _port, _requestCallback, null);
-        }
-
-        public void Stop()
-        {
-            if (_stopped) return;
-
-            _stopped = true;
-            _started = false;
-
-            if (_socket != null && !_socket.Disposed)
-                _socket.Dispose();
-            _socket = null;
-            _tcpClient = null;
+            Socket client = new Socket(_addressFamily, SocketType.Stream, ProtocolType.Tcp);
+            client.BeginConnect(_host, _port, ConnectCallback, client);
         }
     }
 }

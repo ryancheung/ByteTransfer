@@ -1,8 +1,8 @@
 using System;
-using System.Threading;
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
+using System.Buffers;
 
 namespace ByteTransfer
 {
@@ -65,19 +65,6 @@ namespace ByteTransfer
     {
         public const int DEFAULT_SIZE = 0x20;
 
-        private static readonly ThreadLocal<byte[]> _ReadBuffer2Bytes;
-        private static readonly ThreadLocal<byte[]> _ReadBuffer4Bytes;
-        private static readonly ThreadLocal<byte[]> _ReadBuffer8Bytes;
-        public static byte[] ReadBuffer2Bytes { get { return _ReadBuffer2Bytes.Value; } }
-        public static byte[] ReadBuffer4Bytes { get { return _ReadBuffer4Bytes.Value; } }
-        public static byte[] ReadBuffer8Bytes { get { return _ReadBuffer8Bytes.Value; } }
-
-        static ByteBuffer()
-        {
-            _ReadBuffer2Bytes = new ThreadLocal<byte[]>(() => new byte[2]);
-            _ReadBuffer4Bytes = new ThreadLocal<byte[]>(() => new byte[4]);
-            _ReadBuffer8Bytes = new ThreadLocal<byte[]>(() => new byte[8]);
-        }
 
         private int _wpos;
         private int _rpos;
@@ -246,14 +233,6 @@ namespace ByteTransfer
             Append((byte)0);
         }
 
-        private void AppendWithEndianess(byte[] src)
-        {
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(src);
-
-            Append(src);
-        }
-
         public void Append(bool value)
         {
             Append(new byte[] { value ? (byte)1 : (byte)0 });
@@ -266,17 +245,17 @@ namespace ByteTransfer
 
         public void Append(ushort value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(uint value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(ulong value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(sbyte value)
@@ -286,27 +265,27 @@ namespace ByteTransfer
 
         public void Append(short value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(int value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(long value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(float value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Append(double value)
         {
-            AppendWithEndianess(BitConverter.GetBytes(value));
+            Append(BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, byte[] src, int startIndex, int length)
@@ -325,67 +304,59 @@ namespace ByteTransfer
             Buffer.BlockCopy(src, startIndex, _storage, pos, src.Length);
         }
 
-        private void PutWithEndianess(int pos, byte[] src)
-        {
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(src);
-
-            Put(pos, src);
-        }
-
         public void Put(int pos, byte value)
         {
-            PutWithEndianess(pos, new byte[] { value });
+            Put(pos, new byte[] { value });
         }
 
         public void Put(int pos, bool value)
         {
-            PutWithEndianess(pos, new byte[] { value ? (byte)1 : (byte)0 });
+            Put(pos, new byte[] { value ? (byte)1 : (byte)0 });
         }
 
         public void Put(int pos, ushort value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, uint value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, ulong value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, sbyte value)
         {
-            PutWithEndianess(pos, new byte[] { (byte)value });
+            Put(pos, new byte[] { (byte)value });
         }
 
         public void Put(int pos, short value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, int value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, long value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, float value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public void Put(int pos, double value)
         {
-            PutWithEndianess(pos, BitConverter.GetBytes(value));
+            Put(pos, BitConverter.GetBytes(value));
         }
 
         public bool ReadBool()
@@ -400,35 +371,50 @@ namespace ByteTransfer
 
         public ushort ReadUShort()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
+            var temp = ArrayPool<byte>.Shared.Rent(2);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 2);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer2Bytes);
-
-            _rpos += 2;
-            return BitConverter.ToUInt16(ReadBuffer2Bytes, 0);
+                _rpos += 2;
+                return BitConverter.ToUInt16(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public uint ReadUInt()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            var temp = ArrayPool<byte>.Shared.Rent(4);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 4);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer4Bytes);
-
-            _rpos += 4;
-            return BitConverter.ToUInt32(ReadBuffer4Bytes, 0);
+                _rpos += 4;
+                return BitConverter.ToUInt32(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public ulong ReadULong()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            var temp = ArrayPool<byte>.Shared.Rent(8);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 8);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer8Bytes);
-
-            _rpos += 8;
-            return BitConverter.ToUInt64(ReadBuffer8Bytes, 0);
+                _rpos += 8;
+                return BitConverter.ToUInt64(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public sbyte ReadSByte()
@@ -438,69 +424,94 @@ namespace ByteTransfer
 
         public short ReadShort()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer2Bytes, 0, 2);
+            var temp = ArrayPool<byte>.Shared.Rent(2);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 2);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer2Bytes);
-
-            _rpos += 2;
-            return BitConverter.ToInt16(ReadBuffer2Bytes, 0);
+                _rpos += 2;
+                return BitConverter.ToInt16(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public int ReadInt()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            var temp = ArrayPool<byte>.Shared.Rent(4);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 4);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer4Bytes);
-
-            _rpos += 4;
-            return BitConverter.ToInt32(ReadBuffer4Bytes, 0);
+                _rpos += 4;
+                return BitConverter.ToInt32(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public long ReadLong()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            var temp = ArrayPool<byte>.Shared.Rent(8);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 8);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer8Bytes);
-
-            _rpos += 8;
-            return BitConverter.ToInt64(ReadBuffer8Bytes, 0);
+                _rpos += 8;
+                return BitConverter.ToInt64(temp, 0);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public float ReadFloat()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer4Bytes, 0, 4);
+            var temp = ArrayPool<byte>.Shared.Rent(4);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 4);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer4Bytes);
+                _rpos += 4;
 
-            _rpos += 4;
+                var value = BitConverter.ToSingle(temp, 0);
 
-            var value = BitConverter.ToSingle(ReadBuffer4Bytes, 0);
+                if (float.IsInfinity(value))
+                    throw new ByteBufferInvalidValueException("float", "infinity");
 
-            if (float.IsInfinity(value))
-                throw new ByteBufferInvalidValueException("float", "infinity");
-
-            return value;
+                return value;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public double ReadDouble()
         {
-            Buffer.BlockCopy(_storage, _rpos, ReadBuffer8Bytes, 0, 8);
+            var temp = ArrayPool<byte>.Shared.Rent(8);
+            try
+            {
+                Buffer.BlockCopy(_storage, _rpos, temp, 0, 8);
 
-            if (!BitConverter.IsLittleEndian)
-                Array.Reverse(ReadBuffer8Bytes);
+                _rpos += 8;
 
-            _rpos += 8;
+                var value = BitConverter.ToDouble(temp, 0);
 
-            var value = BitConverter.ToDouble(ReadBuffer8Bytes, 0);
+                if (double.IsInfinity(value))
+                    throw new ByteBufferInvalidValueException("double", "infinity");
 
-            if (double.IsInfinity(value))
-                throw new ByteBufferInvalidValueException("double", "infinity");
-
-            return value;
+                return value;
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(temp);
+            }
         }
 
         public string ReadString()

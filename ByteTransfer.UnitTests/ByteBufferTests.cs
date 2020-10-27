@@ -58,12 +58,6 @@ namespace ByteTransfer.UnitTests
             byte[] bytes1 = new byte[2] { _buffer.Data()[0], _buffer.Data()[1] };
             byte[] bytes2 = new byte[2] { _buffer.Data()[2], _buffer.Data()[3] };
 
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
-
             Assert.AreEqual((ushort)'你', BitConverter.ToUInt16(bytes1, 0));
             Assert.AreEqual((ushort)'好', BitConverter.ToUInt16(bytes2, 0));
         }
@@ -79,12 +73,6 @@ namespace ByteTransfer.UnitTests
             byte[] bytes1 = new byte[2] { _buffer.Data()[0], _buffer.Data()[1] };
             byte[] bytes2 = new byte[2] { _buffer.Data()[2], _buffer.Data()[3] };
 
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
-
             Assert.AreEqual((short)'你', BitConverter.ToInt16(bytes1, 0));
             Assert.AreEqual((short)'好', BitConverter.ToInt16(bytes2, 0));
         }
@@ -99,12 +87,6 @@ namespace ByteTransfer.UnitTests
 
             byte[] bytes1 = new byte[4] { _buffer.Data()[0], _buffer.Data()[1], _buffer.Data()[2], _buffer.Data()[3] };
             byte[] bytes2 = new byte[4] { _buffer.Data()[4], _buffer.Data()[5], _buffer.Data()[6], _buffer.Data()[7] };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
 
             Assert.AreEqual((uint)'你', BitConverter.ToUInt32(bytes1, 0));
             Assert.AreEqual((uint)'好', BitConverter.ToUInt32(bytes2, 0));
@@ -130,12 +112,6 @@ namespace ByteTransfer.UnitTests
                 _buffer.Data()[12], _buffer.Data()[13], _buffer.Data()[14], _buffer.Data()[15],
             };
 
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
-
             Assert.AreEqual((ulong)'你', BitConverter.ToUInt64(bytes1, 0));
             Assert.AreEqual((ulong)'好', BitConverter.ToUInt64(bytes2, 0));
         }
@@ -153,12 +129,6 @@ namespace ByteTransfer.UnitTests
 
             byte[] bytes1 = new byte[4] { _buffer.Data()[0], _buffer.Data()[1], _buffer.Data()[2], _buffer.Data()[3] };
             byte[] bytes2 = new byte[4] { _buffer.Data()[4], _buffer.Data()[5], _buffer.Data()[6], _buffer.Data()[7] };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
 
             Assert.AreEqual(f1, BitConverter.ToSingle(bytes1, 0));
             Assert.AreEqual(f2, BitConverter.ToSingle(bytes2, 0));
@@ -186,12 +156,6 @@ namespace ByteTransfer.UnitTests
                 _buffer.Data()[8], _buffer.Data()[9], _buffer.Data()[10], _buffer.Data()[11],
                 _buffer.Data()[12], _buffer.Data()[13], _buffer.Data()[14], _buffer.Data()[15],
             };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-                Array.Reverse(bytes2);
-            }
 
             Assert.AreEqual(d1, BitConverter.ToDouble(bytes1, 0));
             Assert.AreEqual(d2, BitConverter.ToDouble(bytes2, 0));
@@ -293,11 +257,6 @@ namespace ByteTransfer.UnitTests
 
             byte[] bytes1 = new byte[2] { _buffer.Data()[1], _buffer.Data()[2] };
 
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-            }
-
             Assert.AreEqual((byte)'a', _buffer[0]);
             Assert.AreEqual((ushort)'文', BitConverter.ToUInt16(bytes1, 0));
         }
@@ -312,11 +271,6 @@ namespace ByteTransfer.UnitTests
             _buffer.Put(1, (int)'文');
 
             byte[] bytes1 = new byte[4] { _buffer.Data()[1], _buffer.Data()[2], _buffer.Data()[3], _buffer.Data()[4] };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-            }
 
             Assert.AreEqual((byte)'a', _buffer[0]);
             Assert.AreEqual((int)'文', BitConverter.ToInt32(bytes1, 0));
@@ -336,11 +290,6 @@ namespace ByteTransfer.UnitTests
                 _buffer.Data()[5], _buffer.Data()[6], _buffer.Data()[7], _buffer.Data()[8]
             };
 
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-            }
-
             Assert.AreEqual((byte)'a', _buffer[0]);
             Assert.AreEqual((ulong)'文', BitConverter.ToUInt64(bytes1, 0));
         }
@@ -356,11 +305,6 @@ namespace ByteTransfer.UnitTests
             _buffer.Put(1, f1);
 
             byte[] bytes1 = new byte[4] { _buffer.Data()[1], _buffer.Data()[2], _buffer.Data()[3], _buffer.Data()[4] };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-            }
 
             Assert.AreEqual((byte)'a', _buffer[0]);
             Assert.AreEqual(f1, BitConverter.ToSingle(bytes1, 0));
@@ -380,11 +324,6 @@ namespace ByteTransfer.UnitTests
                 _buffer.Data()[1], _buffer.Data()[2], _buffer.Data()[3], _buffer.Data()[4],
                 _buffer.Data()[5], _buffer.Data()[6], _buffer.Data()[7], _buffer.Data()[8]
             };
-
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes1);
-            }
 
             Assert.AreEqual((byte)'a', _buffer[0]);
             Assert.AreEqual(d1, BitConverter.ToDouble(bytes1, 0));

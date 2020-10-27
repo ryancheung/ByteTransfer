@@ -90,7 +90,7 @@ namespace ByteTransfer
             if (_rpos > 0 && _wpos > _rpos)
             {
                 if (_rpos != _wpos)
-                    Buffer.BlockCopy(_storage, _rpos, _storage, 0, GetActiveSize());
+                    Array.ConstrainedCopy(_storage, _rpos, _storage, 0, GetActiveSize());
 
                 _wpos -= _rpos;
                 _rpos = 0;

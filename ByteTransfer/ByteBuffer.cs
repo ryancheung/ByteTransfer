@@ -73,7 +73,7 @@ namespace ByteTransfer
 
         public ByteBuffer(int initialSize)
         {
-            _storage = new byte[initialSize];
+            _storage = ArrayPool<byte>.Shared.Rent(initialSize);
         }
 
         public ByteBuffer() : this(DEFAULT_SIZE)
@@ -86,7 +86,7 @@ namespace ByteTransfer
             _rpos = right._rpos;
             _storage = right._storage;
 
-            right._storage = new byte[0];
+            right._storage = null;
             right._wpos = 0;
             right._rpos = 0;
         }
@@ -102,7 +102,8 @@ namespace ByteTransfer
         {
             _rpos = 0;
             _wpos = length;
-            _storage = new byte[length];
+
+            _storage = ArrayPool<byte>.Shared.Rent(length);
 
             Buffer.BlockCopy(src, startIndex, _storage, 0, length);
         }
@@ -111,11 +112,21 @@ namespace ByteTransfer
         {
             return _storage.Length;
         }
-        public void Resize(int newsize)
+
+        public void Resize(int newSize, bool resetPos = true)
         {
-            Array.Resize(ref _storage, newsize);
-            _rpos = 0;
-            _wpos = Size();
+            var temp = ArrayPool<byte>.Shared.Rent(newSize);
+            Buffer.BlockCopy(_storage, 0, temp, 0, _storage.Length > temp.Length ? temp.Length : _storage.Length);
+
+            ArrayPool<byte>.Shared.Return(_storage);
+
+            _storage = temp;
+
+            if (resetPos)
+            {
+                _rpos = 0;
+                _wpos = Size();
+            }
         }
 
         public int this[int pos]
@@ -200,47 +211,71 @@ namespace ByteTransfer
             return GenericSizes.ContainsKey(typeof(T));
         }
 
-        public void Append(byte[] src)
+        /// <summary>
+        /// Append data to buffer.
+        /// </summary>
+        /// <param name="src">The data to append.</param>
+        /// <param name="length">The length of data to append. If it's 0 then append the whole data.</param>
+        public void Append(byte[] src, int length = 0)
         {
             Debug.Assert(src != null, string.Format("Attempted to put a NULL-pointer in ByteBuffer (pos: {0} size: {1})", _wpos, Size()));
             Debug.Assert(src.Length > 0, string.Format("Attempted to put a zero-sized value in ByteBuffer (pos: {0} size: {1})", _wpos, Size()));
             Debug.Assert(Size() < 10000000);
 
-            int newSize = _wpos + src.Length;
+            var appendLength = length == 0 ? src.Length : Math.Min(length, src.Length);
+
+            int newSize = _wpos + appendLength;
             if (_storage.Length < newSize) // custom memory allocation rules
             {
                 if (newSize < 100)
-                    Array.Resize(ref _storage, 300);
+                    Resize(300, false);
                 else if (newSize < 750)
-                    Array.Resize(ref _storage, 2500);
+                    Resize(2500, false);
                 else if (newSize < 6000)
-                    Array.Resize(ref _storage, 10000);
+                    Resize(10000, false);
                 else
-                    Array.Resize(ref _storage, 400000);
+                    Resize(400000, false);
             }
 
             if (_storage.Length < newSize)
-                Array.Resize(ref _storage, newSize);
+                Resize(newSize, false);
 
-            Buffer.BlockCopy(src, 0, _storage, _wpos, src.Length);
+            Buffer.BlockCopy(src, 0, _storage, _wpos, appendLength);
 
             _wpos = newSize;
         }
 
         public void Append(string value)
         {
-            Append(Encoding.UTF8.GetBytes(value));
+            var byteCount = Encoding.UTF8.GetByteCount(value);
+
+            var temp = ArrayPool<byte>.Shared.Rent(byteCount);
+            Encoding.UTF8.GetBytes(value, 0, value.Length, temp, 0);
+
+            Append(temp, byteCount);
             Append((byte)0);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Append(bool value)
         {
-            Append(new byte[] { value ? (byte)1 : (byte)0 });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = value ? (byte)1 : (byte)0;
+
+            Append(temp, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Append(byte value)
         {
-            Append(new byte[] { value });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = value;
+
+            Append(temp, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Append(ushort value)
@@ -260,7 +295,12 @@ namespace ByteTransfer
 
         public void Append(sbyte value)
         {
-            Append(new byte[] { (byte)value });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = (byte)value;
+
+            Append(temp, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Append(short value)
@@ -306,12 +346,22 @@ namespace ByteTransfer
 
         public void Put(int pos, byte value)
         {
-            Put(pos, new byte[] { value });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = value;
+
+            Put(pos, temp, 0, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Put(int pos, bool value)
         {
-            Put(pos, new byte[] { value ? (byte)1 : (byte)0 });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = value ? (byte)1 : (byte)0;
+
+            Put(pos, temp, 0, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Put(int pos, ushort value)
@@ -331,7 +381,12 @@ namespace ByteTransfer
 
         public void Put(int pos, sbyte value)
         {
-            Put(pos, new byte[] { (byte)value });
+            var temp = ArrayPool<byte>.Shared.Rent(1);
+            temp[0] = (byte)value;
+
+            Put(pos, temp, 0, 1);
+
+            ArrayPool<byte>.Shared.Return(temp);
         }
 
         public void Put(int pos, short value)

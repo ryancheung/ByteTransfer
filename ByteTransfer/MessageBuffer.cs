@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 
 namespace ByteTransfer
 {
@@ -13,7 +14,7 @@ namespace ByteTransfer
 
         public MessageBuffer(int initialSize)
         {
-            _storage = new byte[initialSize];
+            _storage = ArrayPool<byte>.Shared.Rent(initialSize);
         }
 
         public MessageBuffer() : this(DefaultSize) { }
@@ -33,7 +34,7 @@ namespace ByteTransfer
             _rpos = 0;
 
             var ret = _storage;
-            _storage = new byte[0];
+            _storage = null;
 
             return ret;
         }
@@ -59,7 +60,12 @@ namespace ByteTransfer
 
         public void Resize(int bytes)
         {
-            Array.Resize(ref _storage, bytes);
+            var temp = ArrayPool<byte>.Shared.Rent(bytes);
+            Buffer.BlockCopy(_storage, 0, temp, 0, _storage.Length > temp.Length ? temp.Length : _storage.Length);
+
+            ArrayPool<byte>.Shared.Return(_storage);
+
+            _storage = temp;
         }
 
         public void ReadCompleted(int bytes)
@@ -102,7 +108,7 @@ namespace ByteTransfer
         {
             // resize buffer if it's already full
             if (GetRemainingSpace() == 0)
-                Array.Resize(ref _storage, _storage.Length * 3 / 2);
+                Resize(_storage.Length * 3 / 2);
         }
 
         public void Write(byte[] data, int size, int startIndex = 0)

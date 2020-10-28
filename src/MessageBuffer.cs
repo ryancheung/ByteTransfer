@@ -17,6 +17,11 @@ namespace ByteTransfer
             _storage = ArrayPool<byte>.Shared.Rent(initialSize);
         }
 
+        ~MessageBuffer()
+        {
+            ArrayPool<byte>.Shared.Return(_storage);
+        }
+
         public MessageBuffer() : this(DefaultSize) { }
 
         public MessageBuffer(MessageBuffer right) : this(DefaultSize)

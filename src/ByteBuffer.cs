@@ -108,6 +108,11 @@ namespace ByteTransfer
             Buffer.BlockCopy(src, startIndex, _storage, 0, length);
         }
 
+        ~ByteBuffer()
+        {
+            ArrayPool<byte>.Shared.Return(_storage);
+        }
+
         public int Size()
         {
             return _storage.Length;

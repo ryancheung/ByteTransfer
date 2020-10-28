@@ -213,5 +213,13 @@ namespace ByteTransfer
 
             AsyncProcessQueue();
         }
+
+        public virtual bool Update()
+        {
+            if (_closed.Value)
+                return false;
+
+            return true;
+        }
     }
 }

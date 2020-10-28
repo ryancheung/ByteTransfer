@@ -35,6 +35,8 @@ namespace ByteTransfer
         public IPAddress RemoteAddress { get { return _remoteAddress; } }
         public int RemotePort { get { return _remotePort; } }
 
+        public bool Shutdown { get; private set; }
+
         public BaseSocket()
         {
             _readBuffer = new MessageBuffer(READ_BLOCK_SIZE);
@@ -130,6 +132,12 @@ namespace ByteTransfer
             {
                 var transferredBytes = _socket.EndReceive(result);
 
+                if (transferredBytes == 0) // Handle TCP Shutdown
+                {
+                    Shutdown = true;
+                    return;
+                }
+
                 _readBuffer.WriteCompleted(transferredBytes);
                 ReadHandler();
             }
@@ -189,7 +197,7 @@ namespace ByteTransfer
 
         protected void AsyncProcessQueue()
         {
-            if (_isWritingAsync)
+            if (_isWritingAsync || Shutdown || _closed.Value)
                 return;
 
             _isWritingAsync = true;

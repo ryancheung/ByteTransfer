@@ -175,7 +175,7 @@ namespace ByteTransfer
             _rpos = _wpos = 0;
         }
 
-        public bool Empty { get { return _storage.Length == 0; } }
+        public bool Empty { get { return _storage == null || _storage.Length == 0; } }
 
         /// <summary>
         /// A lookup of type sizes. Used instead of Marshal.SizeOf() which has additional

@@ -6,18 +6,6 @@ namespace Server
 {
     public class AuthSession : BaseSocket
     {
-        public void SendPacket(ByteBuffer packet)
-        {
-            if (!IsOpen()) return;
-
-            if (!packet.Empty)
-            {
-                var buffer = new MessageBuffer(packet.Wpos());
-                buffer.Write(packet.Data(), packet.Wpos());
-                QueuePacket(buffer);
-            }
-        }
-
         public override void Start()
         {
             SetBlocking(false);

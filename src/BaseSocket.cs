@@ -229,5 +229,17 @@ namespace ByteTransfer
 
             return true;
         }
+
+        public void SendPacket(ByteBuffer packet)
+        {
+            if (!IsOpen()) return;
+
+            if (!packet.Empty && packet.Wpos() > 0)
+            {
+                var buffer = new MessageBuffer(packet.Wpos());
+                buffer.Write(packet.Data(), packet.Wpos());
+                QueuePacket(buffer);
+            }
+        }
     }
 }

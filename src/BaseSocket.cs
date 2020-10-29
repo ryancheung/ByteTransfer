@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using NLog;
 
 namespace ByteTransfer
 {
@@ -36,6 +38,8 @@ namespace ByteTransfer
         public int RemotePort { get { return _remotePort; } }
 
         public bool Shutdown { get; private set; }
+
+        public bool LogException { get; private set; }
 
         public BaseSocket()
         {
@@ -141,9 +145,17 @@ namespace ByteTransfer
                 _readBuffer.WriteCompleted(transferredBytes);
                 ReadHandler();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException) 
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
@@ -160,9 +172,17 @@ namespace ByteTransfer
                 _socket.BeginReceive(_readBuffer.Data(), _readBuffer.Wpos(), _readBuffer.GetRemainingSpace(),
                     SocketFlags.None, out _error, ReceiveDataCallback, null);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 SetClosing();
+
+                if (LogException) 
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
@@ -189,9 +209,17 @@ namespace ByteTransfer
                 else if (_closing.Value)
                     CloseSocket();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException) 
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
@@ -209,9 +237,17 @@ namespace ByteTransfer
                 _socket.BeginSend(buffer.Data(), buffer.Rpos(), buffer.GetActiveSize(),
                     SocketFlags.None, out _error, SendDataCallback, null);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException) 
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 

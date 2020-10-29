@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Shared;
 
 namespace Client
 {
@@ -7,12 +8,18 @@ namespace Client
     {
         static void Main(string[] args)
         {
+            MessagePackManager.Register();
+            ByteTransfer.NetSettings.SetupPackets(typeof(Shared.ClientPackets.Login).Assembly);
+
             Console.WriteLine("Connecting to 127.0.0.1:3790");
 
-            var client = new ByteTransfer.Client<AuthSocket>("127.0.0.1", 3790);
+            var client = new ByteTransfer.NetClient<AuthSocket>("127.0.0.1", 3790);
 
-            Thread.Sleep(2000);
-            client.Socket.CloseSocket();
+            while(true)
+            {
+                //client.Socket.Process();
+                Thread.Sleep(1000);
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace ByteTransfer
 {
-    public class Client<T> where T : BaseSocket, new()
+    public class NetClient<T> where T : BaseSocket, new()
     {
         private readonly string _host;
         private readonly int _port;
@@ -23,7 +23,7 @@ namespace ByteTransfer
             return _socket.IsOpen();
         }
 
-        public Client(string host, int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
+        public NetClient(string host, int port, AddressFamily addressFamily = AddressFamily.InterNetwork)
         {
             _host = host;
             _port = port;

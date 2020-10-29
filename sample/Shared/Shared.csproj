@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="2.2.60" />
+    <PackageReference Include="MessagePackAnalyzer" Version="2.2.60" PrivateAssets="All" />
+    <ProjectReference Include="..\..\src\ByteTransfer.csproj" />
+  </ItemGroup>
+
+</Project>

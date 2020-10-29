@@ -1,0 +1,23 @@
+using System;
+using ByteTransfer;
+
+namespace Server
+{
+    public class AuthSocket : ObjectSocket
+    {
+        public override void Start()
+        {
+            ServerSocket = true;
+
+            SetBlocking(false);
+
+            var ipAddress = RemoteAddress.ToString();
+            Console.WriteLine("Connection from {0}:{1} accepted", ipAddress, RemotePort);
+
+            Session = new AuthSession();
+            World.AddSession(Session);
+
+            AsyncRead();
+        }
+    }
+}

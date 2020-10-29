@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Shared;
 
 namespace Server
 {
@@ -7,13 +8,16 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            var server = new ByteTransfer.Server<AuthSession>("127.0.0.1", 3790);
+            MessagePackManager.Register();
+            ByteTransfer.NetSettings.SetupPackets(typeof(Shared.ClientPackets.Login).Assembly);
+
+            var server = new ByteTransfer.NetServer<AuthSocket>("127.0.0.1", 3790);
 
             server.StartNetwork();
 
             while(true)
             {
-                Thread.Sleep(1);
+                World.Process();
             }
         }
     }

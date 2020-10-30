@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Reflection;
@@ -23,44 +24,55 @@ namespace ByteTransfer
         /// </summary>
         public bool ServerSocket { get; protected set; }
 
+        protected AuthCrypt _authCrypt = new AuthCrypt();
         public BaseSession Session { get; protected set; }
+
+        public const int HeaderSizeClient = 6;
+        public const int HeaderSizeServer = 8;
 
         protected override void ReadHandler()
         {
-            MessageBuffer packetBuffer = GetReadBuffer();
+            MessageBuffer packet = GetReadBuffer();
 
-            while (packetBuffer.GetActiveSize() > 0)
+            while (packet.GetActiveSize() > 0)
             {
-                int size = ServerSocket ? sizeof(ushort) : sizeof(int);
+                int size = ServerSocket ? HeaderSizeClient : HeaderSizeServer;
 
-                if (packetBuffer.GetActiveSize() < size)
+                if (packet.GetActiveSize() < size)
                     break;
+
+                // We just received nice new header
+                _authCrypt.DecryptRecv(packet.Data(), packet.Rpos(), size);
+                var addr = Marshal.UnsafeAddrOfPinnedArrayElement(packet.Data(), packet.Rpos());
+
+                int packetId;
 
                 if (ServerSocket)
                 {
-                    size = BitConverter.ToUInt16(packetBuffer.Data(), packetBuffer.Rpos());
-                    packetBuffer.ReadCompleted(sizeof(ushort));
+                    var header = Marshal.PtrToStructure<ClientPacketHeader>(addr);
+                    packet.ReadCompleted(size);
+                    size = header.Size - 4;
+                    packetId = header.PacketId;
                 }
                 else
                 {
-                    size = BitConverter.ToInt32(packetBuffer.Data(), packetBuffer.Rpos());
-                    packetBuffer.ReadCompleted(sizeof(int));
+                    var header = Marshal.PtrToStructure<ServerPacketHeader>(addr);
+                    packet.ReadCompleted(size);
+                    size = header.Size - 4;
+                    packetId = header.PacketId;
                 }
 
-                if (packetBuffer.GetActiveSize() < size)
+                if (packet.GetActiveSize() < size)
                     break;
 
-                DeserializePacket(size, packetBuffer);
+                DeserializePacket(packetId, size, packet);
             }
 
             AsyncRead();
         }
 
-        protected void DeserializePacket(int size, MessageBuffer packetBuffer)
+        protected void DeserializePacket(int packetId, int size, MessageBuffer packetBuffer)
         {
-            var packetId = BitConverter.ToInt32(packetBuffer.Data(), packetBuffer.Rpos());
-            packetBuffer.ReadCompleted(sizeof(int));
-
             var packetType = ObjectPacket.GetPacketType(packetId);
 
             if (packetType == null)
@@ -84,17 +96,16 @@ namespace ByteTransfer
                 _GenericDeserializeMethods[packetType] = genericDeserializeMethod;
             }
 
-            var packetLength = size - sizeof(int);
-            var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), packetLength);
+            var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
 
             var obj = genericDeserializeMethod.Invoke(null, new object[] { memory, null, null });
 
             if (Session != null)
                 Session.ReceiveQueue.Enqueue(obj as ObjectPacket);
 
-            packetBuffer.ReadCompleted(packetLength);
+            packetBuffer.ReadCompleted(size);
 
-            Console.WriteLine("{0} socket - received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, packetLength);
+            Console.WriteLine("{0} socket - received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
         }
     }
 }

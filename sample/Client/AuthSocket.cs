@@ -14,6 +14,8 @@ namespace Client
             var ipAddress = RemoteAddress.ToString();
             Console.WriteLine("Connected to server {0}:{1}", ipAddress, RemotePort);
 
+            _authCrypt.Init("key", Shared.Keys.ServerEncryptionKey, Shared.Keys.ClientEncryptionKey, ServerSocket);
+
             var loginPacket = new Shared.ClientPackets.Login { Username = "foo", Password = "bar" };
             var data = MessagePackSerializer.Serialize(loginPacket);
 
@@ -21,6 +23,9 @@ namespace Client
             buffer.Append((ushort)(data.Length + 4));
             buffer.Append(loginPacket.PacketId);
             buffer.Append(data);
+
+            _authCrypt.EncryptSend(buffer.Data(), 0, 6);
+
             SendPacket(buffer);
 
             AsyncRead();

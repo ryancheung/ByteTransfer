@@ -17,6 +17,8 @@ namespace Server
             Session = new AuthSession();
             World.AddSession(Session);
 
+            _authCrypt.Init("key", Shared.Keys.ServerEncryptionKey, Shared.Keys.ClientEncryptionKey, ServerSocket);
+
             AsyncRead();
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Reflection;
@@ -30,13 +31,25 @@ namespace ByteTransfer
         public const int HeaderSizeClient = 6;
         public const int HeaderSizeServer = 8;
 
+        public int RecvHeaderSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return ServerSocket ? HeaderSizeClient : HeaderSizeServer; }
+        }
+
+        public int SendHeaderSize
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return ServerSocket ? HeaderSizeServer : HeaderSizeClient; }
+        }
+
         protected override void ReadHandler()
         {
             MessageBuffer packet = GetReadBuffer();
 
             while (packet.GetActiveSize() > 0)
             {
-                int size = ServerSocket ? HeaderSizeClient : HeaderSizeServer;
+                int size = RecvHeaderSize;
 
                 if (packet.GetActiveSize() < size)
                     break;
@@ -106,6 +119,26 @@ namespace ByteTransfer
             packetBuffer.ReadCompleted(size);
 
             Console.WriteLine("{0} socket - received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
+        }
+
+        public void SendObjectPacket<T>(T packet) where T : ObjectPacket
+        {
+            if (!IsOpen()) return;
+
+            var data = MessagePackSerializer.Serialize(packet);
+            var size = data.Length + 4;
+
+            var buffer = new ByteBuffer(SendHeaderSize + data.Length);
+            if (ServerSocket)
+                buffer.Append((int)size);
+            else
+                buffer.Append((ushort)size);
+            buffer.Append(packet.PacketId);
+            buffer.Append(data);
+
+            _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);
+
+            SendPacket(buffer);
         }
     }
 }

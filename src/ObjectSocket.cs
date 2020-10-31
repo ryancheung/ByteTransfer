@@ -20,16 +20,17 @@ namespace ByteTransfer
 
         /// <summary>
         /// Packet layout is determinined by this option.
-        /// <para> Client packet buffer layout: Size(ushort) | PacketId(int) | Payload(byte[])</para>
-        /// <para> Server packet buffer layout: Size(int) | PacketId(int) | Payload(byte[])</para>
+        /// <para> Client packet buffer layout: Size(ushort) | PacketId(int) | Compressed(bool) | Payload(byte[])</para>
+        /// <para> Server packet buffer layout: Size(int) | PacketId(int) | Compressed(bool) | Payload(byte[])</para>
         /// </summary>
         public bool ServerSocket { get; protected set; }
 
         protected AuthCrypt _authCrypt = new AuthCrypt();
         public BaseSession Session { get; protected set; }
 
-        public const int HeaderSizeClient = 6;
-        public const int HeaderSizeServer = 8;
+        public const int HeaderSizeClient = 7; // ushort+int+bool
+        public const int HeaderSizeServer = 9; // int+int+bool
+        public const int HeaderTailSize = 5; // int+bool
 
         public int RecvHeaderSize
         {
@@ -59,32 +60,35 @@ namespace ByteTransfer
                 var addr = Marshal.UnsafeAddrOfPinnedArrayElement(packet.Data(), packet.Rpos());
 
                 int packetId;
+                bool compressed;
 
                 if (ServerSocket)
                 {
                     var header = Marshal.PtrToStructure<ClientPacketHeader>(addr);
                     packet.ReadCompleted(size);
-                    size = header.Size - 4;
+                    size = header.Size - HeaderTailSize;
                     packetId = header.PacketId;
+                    compressed = header.Compressed != 0;
                 }
                 else
                 {
                     var header = Marshal.PtrToStructure<ServerPacketHeader>(addr);
                     packet.ReadCompleted(size);
-                    size = header.Size - 4;
+                    size = header.Size - HeaderTailSize;
                     packetId = header.PacketId;
+                    compressed = header.Compressed != 0;
                 }
 
                 if (packet.GetActiveSize() < size)
                     break;
 
-                DeserializePacket(packetId, size, packet);
+                DeserializePacket(packetId, compressed, size, packet);
             }
 
             AsyncRead();
         }
 
-        protected void DeserializePacket(int packetId, int size, MessageBuffer packetBuffer)
+        protected void DeserializePacket(int packetId, bool compressed, int size, MessageBuffer packetBuffer)
         {
             var packetType = ObjectPacket.GetPacketType(packetId);
 
@@ -111,7 +115,7 @@ namespace ByteTransfer
 
             var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
 
-            var obj = genericDeserializeMethod.Invoke(null, new object[] { memory, null, null });
+            var obj = genericDeserializeMethod.Invoke(null, new object[] { memory, compressed ? NetSettings.LZ4CompressOptions : null, null });
 
             if (Session != null)
                 Session.ReceiveQueue.Enqueue(obj as ObjectPacket);
@@ -121,12 +125,12 @@ namespace ByteTransfer
             Console.WriteLine("[ObjectSocket] [{0}] Received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
         }
 
-        public void SendObjectPacket<T>(T packet) where T : ObjectPacket
+        public void SendObjectPacket<T>(T packet, bool compress = false) where T : ObjectPacket
         {
             if (!IsOpen()) return;
 
-            var data = MessagePackSerializer.Serialize(packet);
-            var size = data.Length + 4;
+            var data = MessagePackSerializer.Serialize(packet, compress ? NetSettings.LZ4CompressOptions : null);
+            var size = data.Length + HeaderTailSize;
 
             var buffer = new ByteBuffer(SendHeaderSize + data.Length);
             if (ServerSocket)
@@ -134,6 +138,7 @@ namespace ByteTransfer
             else
                 buffer.Append((ushort)size);
             buffer.Append(packet.PacketId);
+            buffer.Append(compress);
             buffer.Append(data);
 
             _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);

@@ -9,9 +9,9 @@ namespace Client
 
         public void Process(Shared.ServerPackets.Login login)
         {
-            Console.WriteLine("[ClientSession] Receveid login package, result: {0}", login.Result);
+            Console.WriteLine("[ClientSession] Received login package, result: {0}", login.Result);
 
-            Socket.SendObjectPacket(new Shared.ClientPackets.Login { Username = new Random().Next(0, 100000).ToString(), Password = "PWD" });
+            Socket.SendObjectPacket(new Shared.ClientPackets.Login { Username = new Random().Next(9999999, 999999999).ToString(), Password = "PWD" }, true);
         }
     }
 }

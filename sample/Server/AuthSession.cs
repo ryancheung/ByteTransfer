@@ -9,9 +9,9 @@ namespace Server
 
         public void Process(Shared.ClientPackets.Login login)
         {
-            Console.WriteLine("[AuthSession] Receveid login package, username: {0}, password: {1}", login.Username, login.Password);
+            Console.WriteLine("[AuthSession] Received login package, username: {0}, password: {1}", login.Username, login.Password);
 
-            Socket.SendObjectPacket(new Shared.ServerPackets.Login { Result = login.Username });
+            Socket.SendObjectPacket(new Shared.ServerPackets.Login { Result = login.Username }, true);
         }
     }
 }

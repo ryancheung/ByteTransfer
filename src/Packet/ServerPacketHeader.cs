@@ -2,13 +2,13 @@ using System.Runtime.InteropServices;
 
 namespace ByteTransfer
 {
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ServerPacketHeader
     {
-        [FieldOffset(0)]
         public int Size;
 
-        [FieldOffset(4)]
         public int PacketId;
+
+        public byte Compressed;
     }
 }

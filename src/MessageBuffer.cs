@@ -98,7 +98,7 @@ namespace ByteTransfer
         // Discards inactive data
         public void Normalize()
         {
-            if (_rpos > 0 && _wpos > _rpos)
+            if (_rpos > 0 && _wpos >= _rpos)
             {
                 if (_rpos != _wpos)
                     Array.ConstrainedCopy(_storage, _rpos, _storage, 0, GetActiveSize());

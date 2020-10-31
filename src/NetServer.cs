@@ -7,7 +7,7 @@ using NLog;
 
 namespace ByteTransfer
 {
-    public class Server<T> where T : BaseSocket, new()
+    public class NetServer<T> where T : BaseSocket, new()
     {
         public bool NetworkStarted { get; protected set; }
 
@@ -15,16 +15,13 @@ namespace ByteTransfer
 
         protected List<T> _sockets = new List<T>();
 
-        private Logger _logger;
-
         private Timer _updateTimer;
 
         private object _socketsLock = new object();
 
-        public Server(string ip, ushort port, Logger logger = null)
+        public NetServer(string ip, ushort port)
         {
             _listener = new TcpListener(IPAddress.Parse(ip), port);
-            _logger = logger;
         }
 
         public virtual void StartNetwork(bool log = true)
@@ -41,8 +38,8 @@ namespace ByteTransfer
 
             if (log)
             {
-                if (_logger != null)
-                    _logger.Info("Network Started.");
+                if (NetSettings.Logger != null)
+                    NetSettings.Logger.Info("Network Started.");
                 else
                     Console.WriteLine("Network Started.");
             }
@@ -67,8 +64,8 @@ namespace ByteTransfer
 
             if (log)
             {
-                if (_logger != null)
-                    _logger.Info("Network Stopped.");
+                if (NetSettings.Logger != null)
+                    NetSettings.Logger.Info("Network Stopped.");
                 else
                     Console.WriteLine("Network Stopped.");
             }
@@ -131,8 +128,8 @@ namespace ByteTransfer
             }
             catch (Exception ex)
             {
-                if (_logger != null)
-                    _logger.Warn(ex);
+                if (NetSettings.Logger != null)
+                    NetSettings.Logger.Warn(ex);
                 else
                     Console.WriteLine(string.Format("Socket accept error: {0}", ex));
             }

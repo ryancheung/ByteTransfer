@@ -1,8 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using NLog;
 
 namespace ByteTransfer
 {
@@ -17,13 +20,13 @@ namespace ByteTransfer
         public Socket Socket { get { return _socket; } }
 
         private MessageBuffer _readBuffer;
-        private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
+        private ConcurrentQueue<MessageBuffer> _writeQueue = new ConcurrentQueue<MessageBuffer>();
 
         private InterlockedBoolean _closed;
         private InterlockedBoolean _closing;
         private Timer _closingTimer;
 
-        private bool _isWritingAsync;
+        private InterlockedBoolean _isWritingAsync;
 
         private bool _disposed = false;
         public bool Disposed { get { return _disposed; } }
@@ -36,6 +39,8 @@ namespace ByteTransfer
         public int RemotePort { get { return _remotePort; } }
 
         public bool Shutdown { get; private set; }
+
+        public bool LogException { get; private set; }
 
         public BaseSocket()
         {
@@ -141,9 +146,17 @@ namespace ByteTransfer
                 _readBuffer.WriteCompleted(transferredBytes);
                 ReadHandler();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException)
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
@@ -160,58 +173,94 @@ namespace ByteTransfer
                 _socket.BeginReceive(_readBuffer.Data(), _readBuffer.Wpos(), _readBuffer.GetRemainingSpace(),
                     SocketFlags.None, out _error, ReceiveDataCallback, null);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 SetClosing();
+
+                if (LogException)
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
         private void WriteHandlerInternal(IAsyncResult result)
         {
-            if (_error > 0)
+            switch (_error)
             {
-                CloseSocket();
-                return;
+                case SocketError.Success:
+                case SocketError.IOPending:
+                    break;
+                default:
+                    CloseSocket();
+                    return;
             }
 
             try
             {
                 var transferedBytes = _socket.EndSend(result);
 
-                _isWritingAsync = false;
-                _writeQueue.Peek().ReadCompleted(transferedBytes);
+                _isWritingAsync.Exchange(false);
 
-                if (_writeQueue.Peek().GetActiveSize() <= 0)
-                    _writeQueue.Dequeue();
+                MessageBuffer buffer = null;
+                if (_writeQueue.Count > 0)
+                    while (!_writeQueue.TryPeek(out buffer)) { };
+
+                buffer.ReadCompleted(transferedBytes);
+
+                if (buffer.GetActiveSize() <= 0)
+                    while (!_writeQueue.TryDequeue(out buffer)) { };
 
                 if (_writeQueue.Count > 0)
                     AsyncProcessQueue();
                 else if (_closing.Value)
                     CloseSocket();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException)
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 
         protected void AsyncProcessQueue()
         {
-            if (_isWritingAsync || Shutdown || _closed.Value)
+            if (Shutdown || _closed.Value)
                 return;
 
-            _isWritingAsync = true;
+            if (_isWritingAsync.Exchange(true))
+                return;
 
-            var buffer = _writeQueue.Peek();
+            MessageBuffer buffer = null;
+            if (_writeQueue.Count > 0)
+                while (!_writeQueue.TryPeek(out buffer)) { };
 
             try
             {
                 _socket.BeginSend(buffer.Data(), buffer.Rpos(), buffer.GetActiveSize(),
                     SocketFlags.None, out _error, SendDataCallback, null);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 CloseSocket();
+
+                if (LogException)
+                {
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(ex);
+                    else
+                        Console.WriteLine(ex);
+                }
             }
         }
 

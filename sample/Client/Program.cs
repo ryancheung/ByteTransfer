@@ -19,7 +19,6 @@ namespace Client
             while (true)
             {
                 client.Socket.Session.Process();
-                Thread.Sleep(1000);
             }
         }
     }

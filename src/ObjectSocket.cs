@@ -32,6 +32,10 @@ namespace ByteTransfer
         public const int HeaderSizeServer = 9; // int+int+bool
         public const int HeaderTailSize = 5; // int+bool
 
+        private static ThreadLocal<object[]> _parameterCache = new ThreadLocal<object[]>(() => {
+            return new object[3] { null, null, null };
+        });
+
         public int RecvHeaderSize
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -115,7 +119,10 @@ namespace ByteTransfer
 
             var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
 
-            var obj = genericDeserializeMethod.Invoke(null, new object[] { memory, compressed ? NetSettings.LZ4CompressOptions : null, null });
+            _parameterCache.Value[0] = memory;
+            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : null;
+
+            var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
 
             if (Session != null)
                 Session.ReceiveQueue.Enqueue(obj as ObjectPacket);

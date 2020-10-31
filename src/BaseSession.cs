@@ -15,6 +15,8 @@ namespace ByteTransfer
 
         public ObjectSocket Socket { get; protected set; }
 
+        private static object[] _parameterCache = new object[1] { null };
+
         public BaseSession(ObjectSocket socket)
         {
             Socket = socket;
@@ -66,7 +68,9 @@ namespace ByteTransfer
             if (processMethod == null)
                 throw new NotImplementedException(string.Format("Not Implemented Exception: Method Process({0}).", packetType));
 
-            processMethod.Invoke(this, new object[] { p });
+            _parameterCache[0] = p;
+
+            processMethod.Invoke(this, _parameterCache);
 
             OnAfterProcessPacket();
         }

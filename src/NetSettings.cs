@@ -14,12 +14,19 @@ namespace ByteTransfer
 
         public static MessagePackSerializerOptions LZ4CompressOptions { get; private set; }
 
+        /// <summary>
+        /// Collect all ObjectPacket classes in assemblies for handling packet serialization and deserialization.
+        /// </summary>
         public static void InstallPackets(params Assembly[] packetAssemblies)
         {
             ObjectPacket.Initialize(packetAssemblies);
         }
 
-        public static void Register(params IFormatterResolver[] resolvers)
+        /// <summary>
+        /// Register pre-generated MessagePack resolvers for AOT compiling.
+        /// NOTE: This is only required for AOT.
+        /// </summary>
+        public static void RegisterMessagePackResolvers(params IFormatterResolver[] resolvers)
         {
             if (_serializerRegistered)
                 return;

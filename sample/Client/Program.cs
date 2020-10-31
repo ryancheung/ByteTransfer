@@ -8,7 +8,7 @@ namespace Client
     {
         static void Main(string[] args)
         {
-            ByteTransfer.NetSettings.Register(MessagePack.Resolvers.GeneratedResolver.Instance);
+            ByteTransfer.NetSettings.RegisterMessagePackResolvers(MessagePack.Resolvers.GeneratedResolver.Instance);
             ByteTransfer.NetSettings.InstallPackets(typeof(Shared.ClientPackets.Login).Assembly);
 
             Console.WriteLine("Connecting to 127.0.0.1:3790");

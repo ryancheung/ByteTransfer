@@ -8,7 +8,7 @@ namespace ByteTransfer
         [FieldOffset(0)]
         public ushort Size;
 
-        [FieldOffset(1)]
+        [FieldOffset(2)]
         public int PacketId;
     }
 }

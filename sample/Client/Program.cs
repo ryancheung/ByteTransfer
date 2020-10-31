@@ -13,11 +13,12 @@ namespace Client
 
             Console.WriteLine("Connecting to 127.0.0.1:3790");
 
-            var client = new ByteTransfer.NetClient<AuthSocket>("127.0.0.1", 3790);
+            var client = new ByteTransfer.NetClient<ClientSocket>("127.0.0.1", 3790);
+            Thread.Sleep(100);
 
-            while(true)
+            while (true)
             {
-                //client.Socket.Process();
+                client.Socket.Session.Process();
                 Thread.Sleep(1000);
             }
         }

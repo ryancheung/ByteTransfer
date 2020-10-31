@@ -13,6 +13,13 @@ namespace ByteTransfer
 
         public readonly ConcurrentQueue<ObjectPacket> ReceiveQueue = new ConcurrentQueue<ObjectPacket>();
 
+        public ObjectSocket Socket { get; protected set; }
+
+        public BaseSession(ObjectSocket socket)
+        {
+            Socket = socket;
+        }
+
         /// <summary>
         /// Process received packets.
         /// </summary>

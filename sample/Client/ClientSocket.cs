@@ -5,7 +5,7 @@ using NLog;
 
 namespace Client
 {
-    public class AuthSocket : ObjectSocket
+    public class ClientSocket : ObjectSocket
     {
         public override void Start()
         {
@@ -13,6 +13,8 @@ namespace Client
 
             var ipAddress = RemoteAddress.ToString();
             Console.WriteLine("Connected to server {0}:{1}", ipAddress, RemotePort);
+
+            Session = new ClientSession(this);
 
             _authCrypt.Init("key", Shared.Keys.ServerEncryptionKey, Shared.Keys.ClientEncryptionKey, ServerSocket);
 

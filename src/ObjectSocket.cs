@@ -118,7 +118,7 @@ namespace ByteTransfer
 
             packetBuffer.ReadCompleted(size);
 
-            Console.WriteLine("{0} socket - received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
+            Console.WriteLine("[ObjectSocket] [{0}] Received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
         }
 
         public void SendObjectPacket<T>(T packet) where T : ObjectPacket

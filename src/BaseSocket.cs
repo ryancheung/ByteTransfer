@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -19,7 +20,7 @@ namespace ByteTransfer
         public Socket Socket { get { return _socket; } }
 
         private MessageBuffer _readBuffer;
-        private Queue<MessageBuffer> _writeQueue = new Queue<MessageBuffer>();
+        private ConcurrentQueue<MessageBuffer> _writeQueue = new ConcurrentQueue<MessageBuffer>();
 
         private InterlockedBoolean _closed;
         private InterlockedBoolean _closing;
@@ -149,7 +150,7 @@ namespace ByteTransfer
             {
                 CloseSocket();
 
-                if (LogException) 
+                if (LogException)
                 {
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(ex);
@@ -176,7 +177,7 @@ namespace ByteTransfer
             {
                 SetClosing();
 
-                if (LogException) 
+                if (LogException)
                 {
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(ex);
@@ -199,10 +200,15 @@ namespace ByteTransfer
                 var transferedBytes = _socket.EndSend(result);
 
                 _isWritingAsync = false;
-                _writeQueue.Peek().ReadCompleted(transferedBytes);
 
-                if (_writeQueue.Peek().GetActiveSize() <= 0)
-                    _writeQueue.Dequeue();
+                MessageBuffer buffer = null;
+                if (_writeQueue.Count > 0)
+                    while (!_writeQueue.TryPeek(out buffer)) { };
+
+                buffer.ReadCompleted(transferedBytes);
+
+                if (buffer.GetActiveSize() <= 0)
+                    while (!_writeQueue.TryDequeue(out buffer)) { };
 
                 if (_writeQueue.Count > 0)
                     AsyncProcessQueue();
@@ -213,7 +219,7 @@ namespace ByteTransfer
             {
                 CloseSocket();
 
-                if (LogException) 
+                if (LogException)
                 {
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(ex);
@@ -230,7 +236,9 @@ namespace ByteTransfer
 
             _isWritingAsync = true;
 
-            var buffer = _writeQueue.Peek();
+            MessageBuffer buffer = null;
+            if (_writeQueue.Count > 0)
+                while (!_writeQueue.TryPeek(out buffer)) { };
 
             try
             {
@@ -241,7 +249,7 @@ namespace ByteTransfer
             {
                 CloseSocket();
 
-                if (LogException) 
+                if (LogException)
                 {
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(ex);

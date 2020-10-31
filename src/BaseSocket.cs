@@ -26,7 +26,7 @@ namespace ByteTransfer
         private InterlockedBoolean _closing;
         private Timer _closingTimer;
 
-        private bool _isWritingAsync;
+        private InterlockedBoolean _isWritingAsync;
 
         private bool _disposed = false;
         public bool Disposed { get { return _disposed; } }
@@ -189,17 +189,21 @@ namespace ByteTransfer
 
         private void WriteHandlerInternal(IAsyncResult result)
         {
-            if (_error > 0)
+            switch (_error)
             {
-                CloseSocket();
-                return;
+                case SocketError.Success:
+                case SocketError.IOPending:
+                    break;
+                default:
+                    CloseSocket();
+                    return;
             }
 
             try
             {
                 var transferedBytes = _socket.EndSend(result);
 
-                _isWritingAsync = false;
+                _isWritingAsync.Exchange(false);
 
                 MessageBuffer buffer = null;
                 if (_writeQueue.Count > 0)
@@ -231,10 +235,11 @@ namespace ByteTransfer
 
         protected void AsyncProcessQueue()
         {
-            if (_isWritingAsync || Shutdown || _closed.Value)
+            if (Shutdown || _closed.Value)
                 return;
 
-            _isWritingAsync = true;
+            if (_isWritingAsync.Exchange(true))
+                return;
 
             MessageBuffer buffer = null;
             if (_writeQueue.Count > 0)

@@ -128,8 +128,6 @@ namespace ByteTransfer
                 Session.ReceiveQueue.Enqueue(obj as ObjectPacket);
 
             packetBuffer.ReadCompleted(size);
-
-            Console.WriteLine("[ObjectSocket] [{0}] Received packet: {1}, length: {2}", ServerSocket ? "Server" : "Client", obj, size);
         }
 
         public void SendObjectPacket<T>(T packet, bool compress = false) where T : ObjectPacket

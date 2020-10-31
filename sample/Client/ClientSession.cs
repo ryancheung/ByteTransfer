@@ -13,6 +13,7 @@ namespace Client
             Console.WriteLine("[ClientSession] Received login package, result: {0}", login.Result);
 
             Socket.SendObjectPacket(new Shared.ClientPackets.Login { Username = new Random().Next(9999999, 999999999).ToString(), Password = "PWD" }, true);
+            Thread.Sleep(10);
         }
     }
 }

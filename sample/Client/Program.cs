@@ -18,7 +18,8 @@ namespace Client
 
             while (true)
             {
-                client.Socket.Session.Process();
+                if (client.Socket != null)
+                    client.Socket.Session.Process();
             }
         }
     }

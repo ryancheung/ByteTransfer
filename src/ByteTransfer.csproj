@@ -2,12 +2,26 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>ryancheung</Authors>
+    <Description>A opinioned TCP client/server to transfer c# POCO objects for game development.</Description>
+    <PackageProjectUrl>https://github.com/ryancheung/ByteTransfer</PackageProjectUrl>
+    <Copyright>Copyright (c) 2020 ryancheung</Copyright>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <Version>0.6.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
      <PackageReference Include="System.Buffers" Version="4.5.1" />
      <PackageReference Include="NLog" Version="4.7.5" />
      <PackageReference Include="MessagePack" Version="2.2.60" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

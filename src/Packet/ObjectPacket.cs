@@ -16,11 +16,17 @@ namespace ByteTransfer
             if (Initialized)
                 return;
 
+            Array.Resize(ref packetAssemblies, packetAssemblies.Length + 1);
+            packetAssemblies[packetAssemblies.Length - 1] = typeof(ObjectPacket).GetTypeInfo().Assembly;
+
             foreach (var assembly in packetAssemblies)
             {
                 foreach (Type type in assembly.GetTypes())
                 {
                     if (type.BaseType != typeof(ObjectPacket))
+                        continue;
+
+                    if (Packets.IndexOf(type) > -1)
                         continue;
 
                     Packets.Add(type);

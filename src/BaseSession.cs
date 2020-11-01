@@ -11,7 +11,7 @@ namespace ByteTransfer
     {
         public static readonly Dictionary<Type, MethodInfo> PacketMethods = new Dictionary<Type, MethodInfo>();
 
-        public readonly ConcurrentQueue<ObjectPacket> ReceiveQueue = new ConcurrentQueue<ObjectPacket>();
+        protected ConcurrentQueue<ObjectPacket> _receiveQueue = new ConcurrentQueue<ObjectPacket>();
 
         public ObjectSocket Socket { get; protected set; }
 
@@ -22,17 +22,28 @@ namespace ByteTransfer
             Socket = socket;
         }
 
+        public virtual void SendObjectPacket<T>(T packet, bool compress = false) where T : ObjectPacket
+        {
+            if (Socket != null)
+                Socket.SendObjectPacket<T>(packet, compress);
+        }
+
+        public void QueuePacket(ObjectPacket packet)
+        {
+            _receiveQueue.Enqueue(packet);
+        }
+
         /// <summary>
         /// Process received packets.
         /// </summary>
         public virtual void Process()
         {
-            while (!ReceiveQueue.IsEmpty)
+            while (!_receiveQueue.IsEmpty)
             {
                 try
                 {
                     ObjectPacket p;
-                    if (!ReceiveQueue.TryDequeue(out p))
+                    if (!_receiveQueue.TryDequeue(out p))
                         continue;
 
                     ProcessPacket(p);

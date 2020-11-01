@@ -125,7 +125,7 @@ namespace ByteTransfer
             var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
 
             if (Session != null)
-                Session.ReceiveQueue.Enqueue(obj as ObjectPacket);
+                Session.QueuePacket(obj as ObjectPacket);
 
             packetBuffer.ReadCompleted(size);
         }

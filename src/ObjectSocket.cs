@@ -120,7 +120,7 @@ namespace ByteTransfer
             var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
 
             _parameterCache.Value[0] = memory;
-            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : null;
+            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
 
             var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
 
@@ -134,7 +134,7 @@ namespace ByteTransfer
         {
             if (!IsOpen()) return;
 
-            var data = MessagePackSerializer.Serialize(packet, compress ? NetSettings.LZ4CompressOptions : null);
+            var data = MessagePackSerializer.Serialize(packet, compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions);
             var size = data.Length + HeaderTailSize;
 
             var buffer = new ByteBuffer(SendHeaderSize + data.Length);

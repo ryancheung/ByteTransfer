@@ -12,6 +12,8 @@ namespace ByteTransfer
 
         public static Logger Logger { get; private set; }
 
+        public static IFormatterResolver MessagePackResolver { get; private set; }
+        public static MessagePackSerializerOptions MessagePackOptions { get; private set; }
         public static MessagePackSerializerOptions LZ4CompressOptions { get; private set; }
 
         /// <summary>
@@ -34,15 +36,15 @@ namespace ByteTransfer
             Array.Resize(ref resolvers, resolvers.Length + 1);
             resolvers[resolvers.Length - 1] = StandardResolver.Instance;
 
-            StaticCompositeResolver.Instance.Register(resolvers);
+            MessagePackResolver = CompositeResolver.Create(resolvers);
 
-            MessagePackSerializer.DefaultOptions = MessagePackSerializerOptions.Standard
+            MessagePackOptions = MessagePackSerializerOptions.Standard
                 .WithSecurity(MessagePackSecurity.UntrustedData)
-                .WithResolver(StaticCompositeResolver.Instance);
+                .WithResolver(MessagePackResolver);
 
             LZ4CompressOptions = MessagePackSerializerOptions.Standard
                 .WithSecurity(MessagePackSecurity.UntrustedData)
-                .WithResolver(StaticCompositeResolver.Instance)
+                .WithResolver(MessagePackResolver)
                 .WithCompression(MessagePackCompression.Lz4BlockArray);
 
             _serializerRegistered = true;

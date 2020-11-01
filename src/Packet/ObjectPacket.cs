@@ -23,7 +23,7 @@ namespace ByteTransfer
             {
                 foreach (Type type in assembly.GetTypes())
                 {
-                    if (type.BaseType != typeof(ObjectPacket))
+                    if (!type.IsSubclassOf(typeof(ObjectPacket)))
                         continue;
 
                     if (Packets.IndexOf(type) > -1)

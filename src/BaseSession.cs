@@ -22,10 +22,10 @@ namespace ByteTransfer
             Socket = socket;
         }
 
-        public virtual void SendObjectPacket<T>(T packet, bool compress = false) where T : ObjectPacket
+        public virtual void SendPacket(ObjectPacket packet, bool compress = false)
         {
             if (Socket != null)
-                Socket.SendObjectPacket<T>(packet, compress);
+                Socket.SendPacket(packet, compress);
         }
 
         public void QueuePacket(ObjectPacket packet)

@@ -11,7 +11,7 @@ namespace Server
         {
             Console.WriteLine("[AuthSession] Received login package, username: {0}, password: {1}", login.Username, login.Password);
 
-            Socket.SendObjectPacket(new Shared.ServerPackets.Login { Result = login.Username }, true);
+            Socket.SendPacket(new Shared.ServerPackets.Login { Result = login.Username }, true);
         }
     }
 }

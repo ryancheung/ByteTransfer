@@ -164,6 +164,12 @@ namespace ByteTransfer
             _rpos = _wpos;
         }
 
+        public void Reset()
+        {
+            _wpos = 0;
+            _rpos = 0;
+        }
+
         public byte[] Data()
         {
             return _storage;

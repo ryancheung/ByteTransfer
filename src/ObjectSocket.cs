@@ -13,10 +13,11 @@ namespace ByteTransfer
 {
     public abstract class ObjectSocket : BaseSocket
     {
-        public static readonly MethodInfo DeserializeMethod = typeof(MessagePackSerializer)
-            .GetMethod("Deserialize", new[] { typeof(ReadOnlyMemory<byte>), typeof(MessagePackSerializerOptions), typeof(CancellationToken) });
+        public static readonly MethodInfo DeserializeMethod;
+        public static readonly MethodInfo SerializeMethod;
 
         private static Dictionary<Type, MethodInfo> _GenericDeserializeMethods = new Dictionary<Type, MethodInfo>();
+        private static Dictionary<Type, MethodInfo> _GenericSerializeMethods = new Dictionary<Type, MethodInfo>();
 
         /// <summary>
         /// Packet layout is determinined by this option.
@@ -36,6 +37,14 @@ namespace ByteTransfer
             return new object[3] { null, null, null };
         });
 
+        private static ThreadLocal<object[]> _parameterCache2 = new ThreadLocal<object[]>(() => {
+            return new object[3] { null, null, null };
+        });
+
+        private static ThreadLocal<ByteBuffer> _sendBufferCache = new ThreadLocal<ByteBuffer>(() => {
+            return new ByteBuffer(4096);
+        });
+
         public int RecvHeaderSize
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -46,6 +55,24 @@ namespace ByteTransfer
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return ServerSocket ? HeaderSizeServer : HeaderSizeClient; }
+        }
+
+        static ObjectSocket()
+        {
+            var type = typeof(MessagePackSerializer);
+            DeserializeMethod = type.GetMethod("Deserialize", new[] { typeof(ReadOnlyMemory<byte>), typeof(MessagePackSerializerOptions), typeof(CancellationToken) });
+
+            foreach(var method in type.GetMethods())
+            {
+                if (method.ToString() == "Byte[] Serialize[T](T, MessagePack.MessagePackSerializerOptions, System.Threading.CancellationToken)")
+                {
+                    SerializeMethod = method;
+                    break;
+                }
+            }
+
+            if (SerializeMethod == null)
+                throw new ApplicationException("MessagePack serialize method search failed!");
         }
 
         protected override void ReadHandler()
@@ -130,14 +157,30 @@ namespace ByteTransfer
             packetBuffer.ReadCompleted(size);
         }
 
-        public void SendObjectPacket<T>(T packet, bool compress = false) where T : ObjectPacket
+        public void SendPacket(ObjectPacket packet, bool compress = false)
         {
             if (!IsOpen()) return;
 
-            var data = MessagePackSerializer.Serialize(packet, compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions);
+            // Invoke the following generic method here to enable AOT
+            //   public static byte[] Serialize<T>(T value, MessagePackSerializerOptions options = null, CancellationToken cancellationToken = default);
+
+            MethodInfo genericSerializeMethod;
+            var packetType = packet.GetType();
+            if (!_GenericSerializeMethods.TryGetValue(packetType, out genericSerializeMethod))
+            {
+                genericSerializeMethod = SerializeMethod.MakeGenericMethod(packetType);
+                _GenericSerializeMethods[packetType] = genericSerializeMethod;
+            }
+
+            _parameterCache2.Value[0] = packet;
+            _parameterCache2.Value[1] = compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
+
+            var data = genericSerializeMethod.Invoke(null, _parameterCache2.Value) as byte[];
             var size = data.Length + HeaderTailSize;
 
-            var buffer = new ByteBuffer(SendHeaderSize + data.Length);
+            var buffer = _sendBufferCache.Value;
+            buffer.Reset();
+
             if (ServerSocket)
                 buffer.Append((int)size);
             else
@@ -148,7 +191,7 @@ namespace ByteTransfer
 
             _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);
 
-            SendPacket(buffer);
+            base.SendPacket(buffer);
         }
     }
 }

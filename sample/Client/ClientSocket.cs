@@ -20,7 +20,7 @@ namespace Client
 
             var loginPacket = new Shared.ClientPackets.Login { Username = "foo", Password = "bar" };
 
-            SendObjectPacket(loginPacket);
+            SendPacket(loginPacket);
 
             AsyncRead();
         }

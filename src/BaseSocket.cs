@@ -290,5 +290,13 @@ namespace ByteTransfer
                 QueuePacket(buffer);
             }
         }
+
+        public void SendPacket(MessageBuffer packet)
+        {
+            if (!IsOpen()) return;
+
+            if (packet.Wpos() > 0)
+                QueuePacket(packet);
+        }
     }
 }

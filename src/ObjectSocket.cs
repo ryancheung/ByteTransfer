@@ -33,18 +33,6 @@ namespace ByteTransfer
         public const int HeaderSizeServer = 9; // int+int+bool
         public const int HeaderTailSize = 5; // int+bool
 
-        private static ThreadLocal<object[]> _parameterCache = new ThreadLocal<object[]>(() => {
-            return new object[3] { null, null, null };
-        });
-
-        private static ThreadLocal<object[]> _parameterCache2 = new ThreadLocal<object[]>(() => {
-            return new object[3] { null, null, null };
-        });
-
-        private static ThreadLocal<ByteBuffer> _sendBufferCache = new ThreadLocal<ByteBuffer>(() => {
-            return new ByteBuffer(4096);
-        });
-
         public int RecvHeaderSize
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -146,10 +134,8 @@ namespace ByteTransfer
 
             var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
 
-            _parameterCache.Value[0] = memory;
-            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
-
-            var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
+            var parameters = new object[3] { memory, compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions, null };
+            var obj = genericDeserializeMethod.Invoke(null, parameters);
 
             if (Session != null)
                 Session.QueuePacket(obj as ObjectPacket);
@@ -172,22 +158,21 @@ namespace ByteTransfer
                 _GenericSerializeMethods[packetType] = genericSerializeMethod;
             }
 
-            _parameterCache2.Value[0] = packet;
-            _parameterCache2.Value[1] = compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
+            var parameters = new object[3] { packet, compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions, null };
+            var data = genericSerializeMethod.Invoke(null, parameters) as byte[];
 
-            var data = genericSerializeMethod.Invoke(null, _parameterCache2.Value) as byte[];
             var size = data.Length + HeaderTailSize;
 
-            var buffer = _sendBufferCache.Value;
-            buffer.Reset();
+            var buffer = new MessageBuffer(size + (ServerSocket ? 4 : 2));
 
             if (ServerSocket)
-                buffer.Append((int)size);
+                buffer.Write(BitConverter.GetBytes((int)size), 4);
             else
-                buffer.Append((ushort)size);
-            buffer.Append(packet.PacketId);
-            buffer.Append(compress);
-            buffer.Append(data);
+                buffer.Write(BitConverter.GetBytes((ushort)size), 2);
+
+            buffer.Write(BitConverter.GetBytes(packet.PacketId), 4);
+            buffer.Write(BitConverter.GetBytes(compress), 1);
+            buffer.Write(data, data.Length);
 
             _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);
 

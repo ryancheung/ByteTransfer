@@ -84,16 +84,14 @@ namespace ByteTransfer
                 if (ServerSocket)
                 {
                     var header = Marshal.PtrToStructure<ClientPacketHeader>(addr);
-                    packet.ReadCompleted(size);
-                    size = header.Size - HeaderTailSize;
+                    size = header.Size + sizeof(ushort);
                     packetId = header.PacketId;
                     compressed = header.Compressed != 0;
                 }
                 else
                 {
                     var header = Marshal.PtrToStructure<ServerPacketHeader>(addr);
-                    packet.ReadCompleted(size);
-                    size = header.Size - HeaderTailSize;
+                    size = header.Size + sizeof(int);
                     packetId = header.PacketId;
                     compressed = header.Compressed != 0;
                 }
@@ -101,6 +99,8 @@ namespace ByteTransfer
                 if (packet.GetActiveSize() < size)
                     break;
 
+                packet.ReadCompleted(RecvHeaderSize);
+                size -= RecvHeaderSize;
                 DeserializePacket(packetId, compressed, size, packet);
             }
 
@@ -116,7 +116,7 @@ namespace ByteTransfer
                 var message = string.Format("Received invalid Packet of Id {0}!", packetId);
 
                 if (NetSettings.Logger != null)
-                    NetSettings.Logger.Info(message);
+                    NetSettings.Logger.Warn(message);
                 else
                     Console.WriteLine(message);
 

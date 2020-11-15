@@ -40,7 +40,7 @@ namespace ByteTransfer
 
         public bool Shutdown { get; private set; }
 
-        public bool LogException { get; private set; }
+        public bool LogException { get; protected set; }
 
         public BaseSocket()
         {

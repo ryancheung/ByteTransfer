@@ -135,6 +135,9 @@ namespace ByteTransfer
 
             try
             {
+                if (!_socket.Connected)
+                    return;
+
                 var transferredBytes = _socket.EndReceive(result);
 
                 if (transferredBytes == 0) // Handle TCP Shutdown

@@ -42,6 +42,9 @@ namespace ByteTransfer
 
         public bool LogException { get; protected set; }
 
+        public int TotalBytesSent { get; protected set; }
+        public int TotalBytesReceived { get; protected set; }
+
         public BaseSocket()
         {
             _readBuffer = new MessageBuffer(READ_BLOCK_SIZE);
@@ -139,6 +142,7 @@ namespace ByteTransfer
                     return;
 
                 var transferredBytes = _socket.EndReceive(result);
+                TotalBytesReceived += transferredBytes;
 
                 if (transferredBytes == 0) // Handle TCP Shutdown
                 {
@@ -205,6 +209,7 @@ namespace ByteTransfer
             try
             {
                 var transferedBytes = _socket.EndSend(result);
+                TotalBytesSent += transferedBytes;
 
                 _isWritingAsync.Exchange(false);
 

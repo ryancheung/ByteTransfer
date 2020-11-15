@@ -276,7 +276,7 @@ namespace ByteTransfer
 
         public virtual bool Update()
         {
-            if (_closed.Value)
+            if (_closed.Value || Shutdown)
                 return false;
 
             return true;

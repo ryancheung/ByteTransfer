@@ -85,6 +85,8 @@ namespace ByteTransfer
 
                     OnSocketRemoved(s);
 
+                    s.Dispose();
+
                     return true;
                 }
 

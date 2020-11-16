@@ -33,6 +33,14 @@ namespace ByteTransfer
         public const int HeaderSizeServer = 9; // int+int+bool
         public const int HeaderTailSize = 5; // int+bool
 
+        private static ThreadLocal<object[]> _parameterCache = new ThreadLocal<object[]>(() => {
+            return new object[3] { null, null, null };
+        });
+
+        private static ThreadLocal<object[]> _parameterCache2 = new ThreadLocal<object[]>(() => {
+            return new object[3] { null, null, null };
+        });
+
         public int RecvHeaderSize
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,9 +141,10 @@ namespace ByteTransfer
             }
 
             var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
+            _parameterCache.Value[0] = memory;
+            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
 
-            var parameters = new object[3] { memory, compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions, null };
-            var obj = genericDeserializeMethod.Invoke(null, parameters);
+            var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
 
             if (Session != null)
                 Session.QueuePacket(obj as ObjectPacket);
@@ -158,8 +167,10 @@ namespace ByteTransfer
                 _GenericSerializeMethods[packetType] = genericSerializeMethod;
             }
 
-            var parameters = new object[3] { packet, compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions, null };
-            var data = genericSerializeMethod.Invoke(null, parameters) as byte[];
+            _parameterCache2.Value[0] = packet;
+            _parameterCache2.Value[1] = compress ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
+
+            var data = genericSerializeMethod.Invoke(null, _parameterCache2.Value) as byte[];
 
             var size = data.Length + HeaderTailSize;
 

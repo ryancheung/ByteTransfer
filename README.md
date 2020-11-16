@@ -62,7 +62,7 @@ namespace Server
         {
             Console.WriteLine("[AuthSession] Received login package, username: {0}, password: {1}", login.Username, login.Password);
 
-            Socket.SendObjectPacket(new Shared.ServerPackets.Login { Result = login.Username }, true);
+            Socket.SendPacket(new Shared.ServerPackets.Login { Result = login.Username }, true);
         }
     }
 
@@ -125,7 +125,7 @@ namespace Client
 
             var loginPacket = new Shared.ClientPackets.Login { Username = "foo", Password = "bar" };
 
-            SendObjectPacket(loginPacket);
+            SendPacket(loginPacket);
 
             AsyncRead();
         }
@@ -139,7 +139,7 @@ namespace Client
         {
             Console.WriteLine("[ClientSession] Received login package, result: {0}", login.Result);
 
-            Socket.SendObjectPacket(new Shared.ClientPackets.Login { Username = new Random().Next(9999999, 999999999).ToString(), Password = "PWD" }, true);
+            Socket.SendPacket(new Shared.ClientPackets.Login { Username = new Random().Next(9999999, 999999999).ToString(), Password = "PWD" }, true);
             Thread.Sleep(10);
         }
     }
@@ -193,7 +193,7 @@ public class ClientSocket : ObjectSocket
 
         var loginPacket = new Shared.ClientPackets.Login { Username = "foo", Password = "bar" };
 
-        SendObjectPacket(loginPacket);
+        SendPacket(loginPacket);
 
         AsyncRead();
     }
@@ -202,7 +202,7 @@ public class ClientSocket : ObjectSocket
 
 ## LZ4 compression for Object Packet
 
-Method `ObjectSocket.SendObjectPacket` has an option to use lz4 compression, e.g: 
+Method `ObjectSocket.SendPacket(ObjectPacket packet, bool compress)` has an option to use lz4 compression, e.g: 
 
 ```c#
 public class ClientSocket : ObjectSocket
@@ -218,7 +218,7 @@ public class ClientSocket : ObjectSocket
 
         var loginPacket = new Shared.ClientPackets.Login { Username = "foo", Password = "bar" };
 
-        SendObjectPacket(loginPacket, true);
+        SendPacket(loginPacket, true);
 
         AsyncRead();
     }

@@ -15,11 +15,28 @@ namespace ByteTransfer
 
         public ObjectSocket Socket { get; protected set; }
 
+        protected abstract TimeSpan TimeOutDelay { get; }
+        public DateTime TimeOutTime { get; set; }
+
+        private bool _disconnecting;
+        public bool Disconnecting
+        {
+            get { return _disconnecting; }
+            set
+            {
+                if (_disconnecting == value) return;
+                _disconnecting = value;
+                TimeOutTime = DateTime.UtcNow.AddSeconds(2);
+            }
+        }
+
+
         private static object[] _parameterCache = new object[1] { null };
 
         public BaseSession(ObjectSocket socket)
         {
             Socket = socket;
+            UpdateTimeOut();
         }
 
         public virtual void SendPacket(ObjectPacket packet, bool compress = false)
@@ -32,6 +49,15 @@ namespace ByteTransfer
         {
             _receiveQueue.Enqueue(packet);
         }
+
+        public void UpdateTimeOut()
+        {
+            if (Disconnecting) return;
+
+            TimeOutTime = DateTime.UtcNow + TimeOutDelay;
+        }
+
+        protected virtual void OnTimeout() {}
 
         /// <summary>
         /// Process received packets.
@@ -56,6 +82,15 @@ namespace ByteTransfer
                         Console.WriteLine(ex);
                 }
             }
+
+            if (DateTime.UtcNow >= TimeOutTime)
+            {
+                OnTimeout();
+                return;
+            }
+
+            if (!Disconnecting)
+                UpdateTimeOut();
         }
 
         protected virtual void OnBeforeProcessPacket() { }

@@ -10,7 +10,7 @@ namespace ByteTransfer
     {
         private static bool _serializerRegistered;
 
-        public static Logger Logger { get; private set; }
+        public static Logger Logger { get; set; }
 
         public static IFormatterResolver MessagePackResolver { get; private set; }
         public static MessagePackSerializerOptions MessagePackOptions { get; private set; }

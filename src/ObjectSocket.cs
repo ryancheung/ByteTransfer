@@ -119,15 +119,20 @@ namespace ByteTransfer
         {
             var packetType = ObjectPacket.GetPacketType(packetId);
 
-            if (packetType == null)
+            if (packetType == null || size <= 0)
             {
-                var message = string.Format("Received invalid Packet of Id {0}!", packetId);
+                if (LogException)
+                {
+                    var message = string.Format("Received a invalid Packet!");
 
-                if (NetSettings.Logger != null)
-                    NetSettings.Logger.Warn(message);
-                else
-                    Console.WriteLine(message);
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(message);
+                    else
+                        Console.WriteLine(message);
+                }
 
+                // Buffer are corrupted, reset!
+                packetBuffer.Reset();
                 return;
             }
 
@@ -140,14 +145,33 @@ namespace ByteTransfer
                 _GenericDeserializeMethods[packetType] = genericDeserializeMethod;
             }
 
-            var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
-            _parameterCache.Value[0] = memory;
-            _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
+            try
+            {
+                var memory = new ReadOnlyMemory<byte>(packetBuffer.Data(), packetBuffer.Rpos(), size);
+                _parameterCache.Value[0] = memory;
+                _parameterCache.Value[1] = compressed ? NetSettings.LZ4CompressOptions : NetSettings.MessagePackOptions;
 
-            var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
+                var obj = genericDeserializeMethod.Invoke(null, _parameterCache.Value);
 
-            if (Session != null)
-                Session.QueuePacket(obj as ObjectPacket);
+                if (Session != null)
+                    Session.QueuePacket(obj as ObjectPacket);
+            }
+            catch
+            {
+                if (LogException)
+                {
+                    var message = string.Format("Received a invalid Packet with exception!");
+
+                    if (NetSettings.Logger != null)
+                        NetSettings.Logger.Warn(message);
+                    else
+                        Console.WriteLine(message);
+                }
+
+                // Buffer are corrupted, reset!
+                packetBuffer.Reset();
+                return;
+            }
 
             packetBuffer.ReadCompleted(size);
         }

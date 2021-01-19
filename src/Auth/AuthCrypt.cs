@@ -13,6 +13,7 @@ namespace ByteTransfer
         private bool _server;
 
         private bool _initialized;
+        public bool Initialized => _initialized;
 
         private ARC4 _decrypt = new ARC4();
         private ARC4 _encrypt = new ARC4();

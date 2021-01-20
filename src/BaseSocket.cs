@@ -1,11 +1,8 @@
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using NLog;
 
 namespace ByteTransfer
 {
@@ -23,8 +20,7 @@ namespace ByteTransfer
         private ConcurrentQueue<MessageBuffer> _writeQueue = new ConcurrentQueue<MessageBuffer>();
 
         private InterlockedBoolean _closed;
-        private InterlockedBoolean _closing;
-        private Timer _closingTimer;
+        private bool _closing;
 
         private InterlockedBoolean _isWritingAsync;
 
@@ -37,8 +33,6 @@ namespace ByteTransfer
 
         public IPAddress RemoteAddress { get { return _remoteAddress; } }
         public int RemotePort { get { return _remotePort; } }
-
-        public bool Shutdown { get; private set; }
 
         public bool LogException { get; protected set; }
 
@@ -79,20 +73,17 @@ namespace ByteTransfer
             _disposed = true;
         }
 
-        private void SetClosing()
+        /// <summary>
+        /// Marks the socket for closing after write buffer becomes empty
+        /// </summary>
+        public void DelayedCloseSocket()
         {
-            if (_closing.Exchange(true))
-                return;
-
-            _closingTimer = new Timer((o) =>
-            {
-                CloseSocket();
-            }, null, 2000, Timeout.Infinite);
+            _closing = true;
         }
 
         public bool IsOpen()
         {
-            return !_closed.Value && !_closing.Value;
+            return !_closed.Value && !_closing;
         }
 
         public virtual void Start() { }
@@ -146,7 +137,7 @@ namespace ByteTransfer
 
                 if (transferredBytes == 0) // Handle TCP Shutdown
                 {
-                    Shutdown = true;
+                    CloseSocket();
                     return;
                 }
 
@@ -182,7 +173,7 @@ namespace ByteTransfer
             }
             catch (Exception ex)
             {
-                SetClosing();
+                CloseSocket();
 
                 if (LogException)
                 {
@@ -224,7 +215,7 @@ namespace ByteTransfer
 
                 if (_writeQueue.Count > 0)
                     AsyncProcessQueue();
-                else if (_closing.Value)
+                else if (_closing)
                     CloseSocket();
             }
             catch (Exception ex)
@@ -243,7 +234,7 @@ namespace ByteTransfer
 
         protected void AsyncProcessQueue()
         {
-            if (Shutdown || _closed.Value)
+            if (_closed.Value)
                 return;
 
             if (_isWritingAsync.Exchange(true))
@@ -281,7 +272,7 @@ namespace ByteTransfer
 
         public virtual bool Update()
         {
-            if (_closed.Value || Shutdown)
+            if (_closed.Value)
                 return false;
 
             return true;

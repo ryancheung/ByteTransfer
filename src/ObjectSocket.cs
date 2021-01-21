@@ -73,18 +73,18 @@ namespace ByteTransfer
 
         protected override void ReadHandler()
         {
-            MessageBuffer packet = GetReadBuffer();
+            MessageBuffer buffer = GetReadBuffer();
 
-            while (packet.GetActiveSize() > 0)
+            while (buffer.GetActiveSize() > 0)
             {
                 int size = RecvHeaderSize;
 
-                if (packet.GetActiveSize() < size)
+                if (buffer.GetActiveSize() < size)
                     break;
 
                 // We just received nice new header
-                _authCrypt.DecryptRecv(packet.Data(), packet.Rpos(), size);
-                var addr = Marshal.UnsafeAddrOfPinnedArrayElement(packet.Data(), packet.Rpos());
+                _authCrypt.DecryptRecv(buffer.Data(), buffer.Rpos(), size);
+                var addr = Marshal.UnsafeAddrOfPinnedArrayElement(buffer.Data(), buffer.Rpos());
 
                 int packetId;
                 bool compressed;
@@ -104,38 +104,38 @@ namespace ByteTransfer
                     compressed = header.Compressed != 0;
                 }
 
-                if (packet.GetActiveSize() < size)
+                var packetType = ObjectPacket.GetPacketType(packetId);
+
+                if (packetType == null || size <= 0)
+                {
+                    if (LogException)
+                    {
+                        var message = string.Format("Received a invalid Packet!");
+
+                        if (NetSettings.Logger != null)
+                            NetSettings.Logger.Warn(message);
+                        else
+                            Console.WriteLine(message);
+                    }
+
+                    // Buffer are corrupted, reset!
+                    buffer.Reset();
+                    continue;
+                }
+
+                if (buffer.GetActiveSize() < size)
                     break;
 
-                packet.ReadCompleted(RecvHeaderSize);
+                buffer.ReadCompleted(RecvHeaderSize);
                 size -= RecvHeaderSize;
-                DeserializePacket(packetId, compressed, size, packet);
+                DeserializePacket(packetType, compressed, size, buffer);
             }
 
             AsyncRead();
         }
 
-        protected void DeserializePacket(int packetId, bool compressed, int size, MessageBuffer packetBuffer)
+        protected void DeserializePacket(Type packetType, bool compressed, int size, MessageBuffer packetBuffer)
         {
-            var packetType = ObjectPacket.GetPacketType(packetId);
-
-            if (packetType == null || size <= 0)
-            {
-                if (LogException)
-                {
-                    var message = string.Format("Received a invalid Packet!");
-
-                    if (NetSettings.Logger != null)
-                        NetSettings.Logger.Warn(message);
-                    else
-                        Console.WriteLine(message);
-                }
-
-                // Buffer are corrupted, reset!
-                packetBuffer.Reset();
-                return;
-            }
-
             // Invoke the following generic method here to enable AOT
             //   public static T Deserialize<T>(ReadOnlyMemory<byte> buffer, MessagePackSerializerOptions options = null, CancellationToken cancellationToken = default);
             MethodInfo genericDeserializeMethod;
@@ -160,7 +160,7 @@ namespace ByteTransfer
             {
                 if (LogException)
                 {
-                    var message = string.Format("Received a invalid Packet with exception!");
+                    var message = string.Format("Received a malformed Packet!");
 
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(message);

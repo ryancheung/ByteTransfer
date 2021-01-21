@@ -39,10 +39,10 @@ namespace ByteTransfer
             UpdateTimeOut();
         }
 
-        public virtual void SendPacket(ObjectPacket packet, bool compress = false)
+        public virtual void SendObjectPacket(ObjectPacket packet, bool encrypt, bool compress = false)
         {
             if (Socket != null)
-                Socket.SendPacket(packet, compress);
+                Socket.SendObjectPacket(packet, encrypt, compress);
         }
 
         public void QueuePacket(ObjectPacket packet)

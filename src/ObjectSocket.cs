@@ -1,13 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
 using System.Threading;
 using System.Reflection;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using MessagePack;
-using NLog;
 
 namespace ByteTransfer
 {
@@ -186,7 +183,7 @@ namespace ByteTransfer
             packetBuffer.ReadCompleted(size);
         }
 
-        public void SendPacket(ObjectPacket packet, bool compress = false)
+        public void SendObjectPacket(ObjectPacket packet, bool encrypt, bool compress = false)
         {
             if (!IsOpen()) return;
 
@@ -219,9 +216,10 @@ namespace ByteTransfer
             buffer.Write(BitConverter.GetBytes(compress), 1);
             buffer.Write(data, data.Length);
 
-            _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);
+            if (encrypt)
+                _authCrypt.EncryptSend(buffer.Data(), 0, SendHeaderSize);
 
-            base.SendPacket(buffer);
+            SendPacket(buffer);
         }
     }
 }

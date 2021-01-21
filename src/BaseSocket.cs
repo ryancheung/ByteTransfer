@@ -202,8 +202,6 @@ namespace ByteTransfer
                 var transferedBytes = _socket.EndSend(result);
                 TotalBytesSent += transferedBytes;
 
-                _isWritingAsync.Exchange(false);
-
                 MessageBuffer buffer = null;
                 if (_writeQueue.Count > 0)
                     while (!_writeQueue.TryPeek(out buffer)) { };
@@ -212,6 +210,8 @@ namespace ByteTransfer
 
                 if (buffer.GetActiveSize() <= 0)
                     while (!_writeQueue.TryDequeue(out buffer)) { };
+
+                _isWritingAsync.Exchange(false);
 
                 if (_writeQueue.Count > 0)
                     AsyncProcessQueue();

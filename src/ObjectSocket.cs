@@ -53,6 +53,8 @@ namespace ByteTransfer
             get { return ServerSocket ? HeaderSizeServer : HeaderSizeClient; }
         }
 
+        private bool _NextPacketDecrypted;
+
         static ObjectSocket()
         {
             var type = typeof(MessagePackSerializer);
@@ -83,7 +85,10 @@ namespace ByteTransfer
                     break;
 
                 // We just received nice new header
-                _authCrypt.DecryptRecv(buffer.Data(), buffer.Rpos(), size);
+                if (!_NextPacketDecrypted)
+                    _authCrypt.DecryptRecv(buffer.Data(), buffer.Rpos(), size);
+                _NextPacketDecrypted = false;
+
                 var addr = Marshal.UnsafeAddrOfPinnedArrayElement(buffer.Data(), buffer.Rpos());
 
                 int packetId;
@@ -124,7 +129,12 @@ namespace ByteTransfer
                 }
 
                 if (buffer.GetActiveSize() < size)
+                {
+                    // NOTE: The header buffer of next upcoming packet is already decrypted in above code.
+                    // We must skip _authCrypt.DecryptRecv() for next packet.
+                    _NextPacketDecrypted = true;
                     break;
+                }
 
                 buffer.ReadCompleted(RecvHeaderSize);
                 size -= RecvHeaderSize;

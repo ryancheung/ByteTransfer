@@ -3,7 +3,6 @@ using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
-using NLog;
 
 namespace ByteTransfer
 {
@@ -15,9 +14,9 @@ namespace ByteTransfer
 
         protected List<T> _sockets = new List<T>();
 
-        private Timer _updateTimer;
-
         private object _socketsLock = new object();
+
+        private Thread _updateThread;
 
         public NetServer(string ip, ushort port)
         {
@@ -34,7 +33,8 @@ namespace ByteTransfer
 
             NetworkStarted = true;
 
-            _updateTimer = new Timer(Update, null, 10, 10);
+            _updateThread = new Thread(new ThreadStart(Update)) { IsBackground = true, Name = "NetServerUpdate" };
+            _updateThread.Start();
 
             if (log)
             {
@@ -54,10 +54,10 @@ namespace ByteTransfer
 
             _listener.Stop();
 
-            _updateTimer.Dispose();
-            _updateTimer = null;
+            _updateThread.Join();
+            _updateThread = null;
 
-            foreach(var s in _sockets)
+            foreach (var s in _sockets)
                 s.Dispose();
 
             _sockets.Clear();
@@ -71,27 +71,30 @@ namespace ByteTransfer
             }
         }
 
-        private void Update(object state)
+        private void Update()
         {
-            if (!NetworkStarted)
-                return;
-
-            _sockets.RemoveAll(s => {
-
-                if (!s.Update())
+            while (NetworkStarted)
+            {
+                _sockets.RemoveAll(s =>
                 {
-                    if (s.IsOpen())
-                        s.CloseSocket();
 
-                    OnSocketRemoved(s);
+                    if (!s.Update())
+                    {
+                        if (s.IsOpen())
+                            s.CloseSocket();
 
-                    s.Dispose();
+                        OnSocketRemoved(s);
 
-                    return true;
-                }
+                        s.Dispose();
 
-                return false;
-            });
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                Thread.Sleep(10);
+            }
         }
 
         protected virtual void OnSocketRemoved(T socket)
@@ -106,7 +109,7 @@ namespace ByteTransfer
 
         protected virtual void AddSocket(T sock)
         {
-            lock(_socketsLock)
+            lock (_socketsLock)
             {
                 _sockets.Add(sock);
                 OnSocketAdded(sock);

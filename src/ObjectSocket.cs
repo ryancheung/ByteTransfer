@@ -185,8 +185,6 @@ namespace ByteTransfer
 
         public void SendObjectPacket(ObjectPacket packet, bool encrypt, bool compress = false)
         {
-            if (!IsOpen()) return;
-
             // Invoke the following generic method here to enable AOT
             //   public static byte[] Serialize<T>(T value, MessagePackSerializerOptions options = null, CancellationToken cancellationToken = default);
 

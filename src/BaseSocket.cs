@@ -279,7 +279,7 @@ namespace ByteTransfer
 
         public void SendPacket(ByteBuffer packet)
         {
-            if (!IsOpen()) return;
+            if (_closed.Value) return;
 
             if (!packet.Empty && packet.Wpos() > 0)
             {
@@ -291,7 +291,7 @@ namespace ByteTransfer
 
         public void SendPacket(MessageBuffer packet)
         {
-            if (!IsOpen()) return;
+            if (_closed.Value) return;
 
             if (packet.Wpos() > 0)
                 QueuePacket(packet);

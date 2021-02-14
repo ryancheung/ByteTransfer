@@ -6,9 +6,6 @@ namespace ByteTransfer
 {
     public class AuthCrypt
     {
-        private byte[] _serverHmacKey;
-        private byte[] _clientHmacKey;
-
         private string _sessionKey;
         private bool _server;
 
@@ -21,25 +18,23 @@ namespace ByteTransfer
         public void Init(string sessionKey, byte[] serverHmacKey, byte[] clientHmacKey, bool server = false)
         {
             _sessionKey = sessionKey;
-            _serverHmacKey = serverHmacKey;
-            _clientHmacKey = clientHmacKey;
 
             _server = server;
 
             if (_server)
             {
-                HMACSHA1 hmacEncrypt = new HMACSHA1(_serverHmacKey);
+                HMACSHA1 hmacEncrypt = new HMACSHA1(serverHmacKey);
                 _encrypt.Key = hmacEncrypt.ComputeHash(Encoding.UTF8.GetBytes(_sessionKey));
 
-                HMACSHA1 hmacDecrypt = new HMACSHA1(_clientHmacKey);
+                HMACSHA1 hmacDecrypt = new HMACSHA1(clientHmacKey);
                 _decrypt.Key = hmacDecrypt.ComputeHash(Encoding.UTF8.GetBytes(_sessionKey));
             }
             else
             {
-                HMACSHA1 hmacEncrypt = new HMACSHA1(_clientHmacKey);
+                HMACSHA1 hmacEncrypt = new HMACSHA1(clientHmacKey);
                 _encrypt.Key = hmacEncrypt.ComputeHash(Encoding.UTF8.GetBytes(_sessionKey));
 
-                HMACSHA1 hmacDecrypt = new HMACSHA1(_serverHmacKey);
+                HMACSHA1 hmacDecrypt = new HMACSHA1(serverHmacKey);
                 _decrypt.Key = hmacDecrypt.ComputeHash(Encoding.UTF8.GetBytes(_sessionKey));
             }
 

@@ -8,6 +8,8 @@ namespace ByteTransfer
         private readonly string _host;
         private readonly int _port;
 
+        private Socket _socketInternal;
+
         private T _socket;
         public T Socket { get { return _socket; } }
 
@@ -34,18 +36,16 @@ namespace ByteTransfer
 
         private void ConnectCallback(IAsyncResult result)
         {
-            Socket client = (Socket)result.AsyncState;
-
-            if (!client.Connected)
+            if (!_socketInternal.Connected)
             {
                 _connectFailed = true;
                 return;
             }
 
-            client.EndConnect(result);
+            _socketInternal.EndConnect(result);
 
             _socket = new T();
-            _socket.Create(client);
+            _socket.Create(_socketInternal);
 
             _socket.Start();
         }
@@ -54,8 +54,24 @@ namespace ByteTransfer
         {
             if (_socket != null) return;
 
-            Socket client = new Socket(_addressFamily, SocketType.Stream, ProtocolType.Tcp);
-            client.BeginConnect(_host, _port, ConnectCallback, client);
+            _socketInternal = new Socket(_addressFamily, SocketType.Stream, ProtocolType.Tcp);
+            _socketInternal.BeginConnect(_host, _port, ConnectCallback, null);
+        }
+
+        public void Stop()
+        {
+            if (_socket != null)
+            {
+                _socket.CloseSocket();
+                _socket.Dispose();
+                return;
+            }
+
+            if (_socketInternal != null)
+            {
+                _socketInternal.Dispose();
+                _socketInternal = null;
+            }
         }
     }
 }

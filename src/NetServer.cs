@@ -52,8 +52,6 @@ namespace ByteTransfer
 
             NetworkStarted = false;
 
-            _listener.Stop();
-
             _updateThread.Join();
             _updateThread = null;
 
@@ -61,6 +59,8 @@ namespace ByteTransfer
                 s.Dispose();
 
             _sockets.Clear();
+
+            _listener.Stop();
 
             if (log)
             {

@@ -65,9 +65,9 @@ namespace ByteTransfer
             if (log)
             {
                 if (NetSettings.Logger != null)
-                    NetSettings.Logger.Info("Network Stopped.");
+                    NetSettings.Logger.Info("NetServer Stopped.");
                 else
-                    Console.WriteLine("Network Stopped.");
+                    Console.WriteLine("NetServer Stopped.");
             }
         }
 

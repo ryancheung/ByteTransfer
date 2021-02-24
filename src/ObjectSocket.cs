@@ -30,6 +30,8 @@ namespace ByteTransfer
         public const int HeaderSizeServer = 9; // int+int+bool
         public const int HeaderTailSize = 5; // int+bool
 
+        protected int _MaxPacketSize = 10240;
+
         private static ThreadLocal<object[]> _parameterCache = new ThreadLocal<object[]>(() => {
             return new object[3] { null, null, null };
         });
@@ -108,21 +110,24 @@ namespace ByteTransfer
 
                 var packetType = ObjectPacket.GetPacketType(packetId);
 
-                if (packetType == null || size <= 0)
+                if (packetType == null || size <= 0 || size >= _MaxPacketSize)
                 {
                     if (LogException)
                     {
-                        var message = string.Format("Received a invalid Packet!");
+                        var message = string.Format("Client {0} sent malformed packet (size: {1}, packetId: {2}).", RemoteAddress, size, packetId);
 
                         if (NetSettings.Logger != null)
                             NetSettings.Logger.Warn(message);
                         else
                             Console.WriteLine(message);
+
+                        CloseSocket();
+                        return;
                     }
 
                     // Buffer are corrupted, reset!
-                    buffer.Reset();
-                    continue;
+                    //buffer.Reset();
+                    //continue;
                 }
 
                 if (buffer.GetActiveSize() < size)
@@ -167,17 +172,20 @@ namespace ByteTransfer
             {
                 if (LogException)
                 {
-                    var message = string.Format("Received a malformed Packet!");
+                    var message = string.Format("Client {0} sent malformed packet (size: {1}, packetType: {2}).", RemoteAddress, size, packetType);
 
                     if (NetSettings.Logger != null)
                         NetSettings.Logger.Warn(message);
                     else
                         Console.WriteLine(message);
+
+                    CloseSocket();
+                    return;
                 }
 
                 // Buffer are corrupted, reset!
-                packetBuffer.Reset();
-                return;
+                //packetBuffer.Reset();
+                //return;
             }
 
             packetBuffer.ReadCompleted(size);

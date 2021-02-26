@@ -39,9 +39,9 @@ namespace ByteTransfer
             if (log)
             {
                 if (NetSettings.Logger != null)
-                    NetSettings.Logger.Info("Network Started.");
+                    NetSettings.Logger.Info("NetServer Started.");
                 else
-                    Console.WriteLine("Network Started.");
+                    Console.WriteLine("NetServer Started.");
             }
         }
 

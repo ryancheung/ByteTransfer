@@ -36,7 +36,7 @@ namespace ByteTransfer
 
         private void ConnectCallback(IAsyncResult result)
         {
-            if (!_socketInternal.Connected)
+            if (_socketInternal == null || !_socketInternal.Connected)
             {
                 _connectFailed = true;
                 return;

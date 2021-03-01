@@ -45,7 +45,7 @@ namespace ByteTransfer
                 Socket.SendObjectPacket(packet, encrypt, compress);
         }
 
-        public void QueuePacket(ObjectPacket packet)
+        public virtual void QueuePacket(ObjectPacket packet)
         {
             _receiveQueue.Enqueue(packet);
         }

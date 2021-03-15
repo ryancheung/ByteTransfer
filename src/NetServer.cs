@@ -77,6 +77,8 @@ namespace ByteTransfer
             {
                 _sockets.RemoveAll(s =>
                 {
+                    if (s == null)
+                        return true;
 
                     if (!s.Update())
                     {

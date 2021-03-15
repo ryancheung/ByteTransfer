@@ -54,6 +54,8 @@ namespace ByteTransfer
 
         private bool _NextPacketDecrypted;
 
+        public bool CloseOnMalformedPacket { get; protected set; }
+
         static ObjectSocket()
         {
             var type = typeof(MessagePackSerializer);
@@ -120,14 +122,19 @@ namespace ByteTransfer
                             NetSettings.Logger.Warn(message);
                         else
                             Console.WriteLine(message);
+                    }
 
+                    if (CloseOnMalformedPacket)
+                    {
                         CloseSocket();
                         return;
                     }
-
-                    // Buffer are corrupted, reset!
-                    //buffer.Reset();
-                    //continue;
+                    else
+                    {
+                        // Buffer are corrupted, reset!
+                        buffer.Reset();
+                        continue;
+                    }
                 }
 
                 if (buffer.GetActiveSize() < size)
@@ -178,14 +185,19 @@ namespace ByteTransfer
                         NetSettings.Logger.Warn(message);
                     else
                         Console.WriteLine(message);
+                }
 
+                if (CloseOnMalformedPacket)
+                {
                     CloseSocket();
                     return;
                 }
-
-                // Buffer are corrupted, reset!
-                //packetBuffer.Reset();
-                //return;
+                else
+                {
+                    // Buffer are corrupted, reset!
+                    packetBuffer.Reset();
+                    return;
+                }
             }
 
             packetBuffer.ReadCompleted(size);

@@ -202,17 +202,20 @@ namespace ByteTransfer
                 TotalBytesSent += transferedBytes;
 
                 MessageBuffer buffer = null;
-                if (_writeQueue.Count > 0)
-                    while (!_writeQueue.TryPeek(out buffer)) { };
+                if (!_writeQueue.TryPeek(out buffer))
+                    throw new ApplicationException("BaseSocket: _writeQueue.TryPeek() failed, which is impossible!");
 
                 buffer.ReadCompleted(transferedBytes);
 
                 if (buffer.GetActiveSize() <= 0)
-                    while (!_writeQueue.TryDequeue(out buffer)) { };
+                {
+                    if (!_writeQueue.TryDequeue(out buffer))
+                        throw new ApplicationException("BaseSocket: _writeQueue.TryDequeue() failed, which is impossible!");
+                }
 
                 _isWritingAsync.Exchange(false);
 
-                if (_writeQueue.Count > 0)
+                if (!_writeQueue.IsEmpty)
                     AsyncProcessQueue();
                 else if (_closing)
                     CloseSocket();
@@ -240,8 +243,11 @@ namespace ByteTransfer
                 return;
 
             MessageBuffer buffer = null;
-            if (_writeQueue.Count > 0)
-                while (!_writeQueue.TryPeek(out buffer)) { };
+            if (!_writeQueue.TryPeek(out buffer))
+            {
+                _isWritingAsync.Exchange(false);
+                return;
+            }
 
             try
             {
